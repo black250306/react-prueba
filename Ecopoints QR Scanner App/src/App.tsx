@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home } from './components/Home';
 import { QRScanner } from './components/QRScanner';
 import { History } from './components/History';
@@ -7,6 +7,7 @@ import { Rewards, Reward } from './components/Rewards';
 import { RecyclingStation } from './components/RecyclingStation';
 import { BottomNav } from './components/BottomNav';
 import { Toaster } from './components/ui/sonner';
+import Login from './components/Login'; // 👈 Importa el Login
 
 export interface Transaction {
   id: string;
@@ -18,7 +19,13 @@ export interface Transaction {
 }
 
 export default function App() {
+  // ✅ Estado de autenticación
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // ✅ Vista actual
   const [currentView, setCurrentView] = useState<'home' | 'scan' | 'history' | 'profile' | 'rewards' | 'station'>('home');
+
+  // ✅ Datos de usuario simulado
   const [balance, setBalance] = useState(850);
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
@@ -55,6 +62,15 @@ export default function App() {
     }
   ]);
 
+  // ✅ Mantener sesión iniciada si existe en localStorage
+  useEffect(() => {
+    const usuarioId = localStorage.getItem("usuario_id");
+    if (usuarioId) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // ✅ Función para agregar transacciones
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'date'>) => {
     const newTransaction: Transaction = {
       ...transaction,
@@ -65,6 +81,7 @@ export default function App() {
     setBalance(prev => prev + transaction.points);
   };
 
+  // ✅ Función para canjear recompensas
   const handleRedeem = (reward: Reward) => {
     addTransaction({
       type: 'redeem',
@@ -74,26 +91,63 @@ export default function App() {
     });
   };
 
+  // ✅ Cierre de sesión
+  const handleLogout = () => {
+    localStorage.removeItem("usuario_id");
+    setIsLoggedIn(false);
+  };
+
+  // ✅ Renderizar vistas según el estado actual
   const renderView = () => {
     switch (currentView) {
       case 'home':
-        return <Home balance={balance} recentTransactions={transactions.slice(0, 3)} onNavigateToRewards={() => setCurrentView('rewards')} />;
+        return (
+          <Home
+            balance={balance}
+            recentTransactions={transactions.slice(0, 3)}
+            onNavigateToRewards={() => setCurrentView('rewards')}
+          />
+        );
       case 'scan':
         return <QRScanner onScanSuccess={addTransaction} />;
       case 'history':
         return <History transactions={transactions} />;
       case 'profile':
-        return <Profile balance={balance} totalScans={transactions.filter(t => t.type === 'scan').length} onViewStation={() => setCurrentView('station')} />;
+        return (
+          <Profile
+            balance={balance}
+            totalScans={transactions.filter(t => t.type === 'scan').length}
+            onViewStation={() => setCurrentView('station')}
+          />
+        );
       case 'rewards':
         return <Rewards balance={balance} onRedeem={handleRedeem} />;
       case 'station':
         return <RecyclingStation />;
       default:
-        return <Home balance={balance} recentTransactions={transactions.slice(0, 3)} onNavigateToRewards={() => setCurrentView('rewards')} />;
+        return (
+          <Home
+            balance={balance}
+            recentTransactions={transactions.slice(0, 3)}
+            onNavigateToRewards={() => setCurrentView('rewards')}
+          />
+        );
     }
   };
 
-  // Show station view in fullscreen without navigation
+  // ✅ Si NO está logueado, mostrar pantalla de login
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLoginSuccess={(usuarioId: string) => {
+          localStorage.setItem("usuario_id", usuarioId);
+          setIsLoggedIn(true);
+        }}
+      />
+    );
+  }
+
+  // ✅ Si está logueado y está en modo estación
   if (currentView === 'station') {
     return (
       <>
@@ -103,14 +157,29 @@ export default function App() {
     );
   }
 
+  // ✅ App principal
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
       <div className="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+        {/* Botón de Cerrar Sesión */}
+        <div className="flex justify-end p-2">
+          <button
+            onClick={handleLogout}
+            className="text-sm text-emerald-600 hover:text-emerald-800 underline"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        {/* Contenido principal */}
         <div className="flex-1 overflow-auto pb-20">
           {renderView()}
         </div>
+
+        {/* Navegación inferior */}
         <BottomNav currentView={currentView} onNavigate={setCurrentView} />
       </div>
+
       <Toaster />
     </div>
   );
