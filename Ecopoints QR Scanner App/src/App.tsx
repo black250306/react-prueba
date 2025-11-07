@@ -134,22 +134,13 @@ export default function App() {
     );
   }
 
-  // ✅ Si está logueado y está en modo estación
 
 
   // ✅ App principal
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
       <div className="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
-        {/* Botón de Cerrar Sesión
-        <div className="flex justify-end p-2">
-          <button
-            onClick={handleLogout}
-            className="text-sm text-emerald-600 hover:text-emerald-800 underline"
-          >
-            Cerrar sesión
-          </button>
-        </div> */}
+        
 
         {/* Contenido principal */}
         <div className="flex-1 overflow-auto pb-20">
