@@ -13,7 +13,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [loading, setLoading] = useState(false);
 
   // Cambia esto por la ruta exacta de tu backend 👇
-  const API_URL = "http://localhost:8000/Backend_ecopoints_api-main/index.php";
+  const API_URL = "https://ecopoints.hvd.lat/api/";
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +50,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       } else {
         toast.success("Inicio de sesión exitoso");
         localStorage.setItem("usuario_id", data.id);
+        localStorage.setItem("usuario_nombre", data.nombre);
+        localStorage.setItem("usuario_correo", data.correo);
         onLoginSuccess(data.id);
+
       }
     } catch (error) {
       console.error(error);
