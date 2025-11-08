@@ -124,7 +124,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     id="name"
-                    name="name"
+                    name="nombre"
                     type="text"
                     placeholder="María Rodriguez"
                     value={formData.nombre}
