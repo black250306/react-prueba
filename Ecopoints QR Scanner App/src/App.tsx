@@ -98,7 +98,7 @@ export default function App() {
           />
         );
       case 'scan':
-        return <QRScanner onScanSuccess={addTransaction} />;
+        return <QRScanner />;
       case 'history':
         return <History transactions={transactions} />;
       case 'profile':
@@ -138,8 +138,8 @@ export default function App() {
 
   // ✅ App principal
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
-      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col shadow-xl">
         
 
         {/* Contenido principal */}

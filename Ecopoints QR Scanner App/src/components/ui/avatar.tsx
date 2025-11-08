@@ -1,9 +1,14 @@
 "use client";
 
 import * as React from "react";
-import * as AvatarPrimitive from "@radix-ui/react-avatar@1.1.3";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.3
+import * as AvatarPrimitive from "@radix-ui/react-avatar"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
+
+// ... (El resto del código de los componentes)
 
 function Avatar({
   className,

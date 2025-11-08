@@ -1,12 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react@0.487.0";
-import { DayPicker } from "react-day-picker@8.10.1";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @0.487.0
+import { ChevronLeft, ChevronRight } from "lucide-react"; 
+
+// ✅ CORRECCIÓN 2: Quitar @8.10.1
+import { DayPicker } from "react-day-picker";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
-
+// ... (El resto del código es correcto)
 function Calendar({
   className,
   classNames,

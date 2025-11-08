@@ -1,13 +1,17 @@
 import * as React from "react";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @0.487.0
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
-} from "lucide-react@0.487.0";
+} from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 import { Button, buttonVariants } from "./button";
 
+// ... (El resto del código es correcto)
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav

@@ -1,8 +1,14 @@
 "use client";
 
+
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk@1.1.1";
-import { SearchIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.1.1
+import { Command as CommandPrimitive } from "cmdk"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { SearchIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 import {
@@ -13,6 +19,7 @@ import {
   DialogTitle,
 } from "./dialog";
 
+// ... (El resto del código es correcto)
 function Command({
   className,
   ...props

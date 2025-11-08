@@ -1,10 +1,14 @@
 "use client";
 
 import * as React from "react";
-import * as TabsPrimitive from "@radix-ui/react-tabs@1.1.3";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.3
+import * as TabsPrimitive from "@radix-ui/react-tabs"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function Tabs({
   className,
   ...props

@@ -1,9 +1,15 @@
 import * as React from "react";
-import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu@1.2.5";
-import { cva } from "class-variance-authority@0.7.1";
-import { ChevronDownIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.2.5
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"; 
+// ✅ CORRECCIÓN 2: Quitar @0.7.1
+import { cva } from "class-variance-authority";
+// ✅ CORRECCIÓN 3: Quitar @0.487.0
+import { ChevronDownIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
+// ... (El resto del código es correcto)
 
 function NavigationMenu({
   className,

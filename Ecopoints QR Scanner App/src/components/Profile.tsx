@@ -17,47 +17,113 @@ import {
   QrCode
 } from 'lucide-react';
 
+// --- Definiciones de Tipos ---
+type Transaction = {
+  id: string;
+  type: "scan" | "redeem";
+  description: string;
+  location: string;
+  points: number;
+  date: string;
+};
+
 interface ProfileProps {
-  balance: number;
-  totalScans: number;
+  // Eliminamos 'balance' y 'totalScans' de props ya que los calcularemos internamente
   onViewStation?: () => void;
   onLogout?: () => void;
 }
 
+// ----------------------------------------------------------------
+// COMPONENTE PRINCIPAL
+// ----------------------------------------------------------------
 
-
-export function Profile({ balance, totalScans, onViewStation, onLogout }: ProfileProps) {
-  const level = Math.floor(totalScans / 5) + 1;
-  const nextLevelScans = (level * 5) - totalScans;
+export function Profile({ onViewStation, onLogout }: ProfileProps) {
   const API_URL = "https://ecopoints.hvd.lat/api/";
   const idusuario = localStorage.getItem("usuario_id");
-  const [botellas, setBotellas] = useState("");
 
-  const obtenerPuntos = async (idusuario: string) => {
+  // ✅ ESTADO INTERNO: Puntos del usuario (Balance)
+  const [botellas, setBotellas] = useState<number | null>(null);
+
+  // ✅ ESTADO INTERNO: Historial de transacciones
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- LÓGICA DE OBTENCIÓN DE DATOS ---
+
+  // Función para obtener el Balance (Puntos)
+  const obtenerPuntos = async () => {
+    if (!idusuario) return;
     try {
       const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`, {
         method: "GET",
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      setBotellas(data.puntos);
-
+      // Aseguramos que se guarda como número o se convierte a número si viene como string
+      setBotellas(Number(data.puntos));
     } catch (error) {
       console.error("Error al obtener puntos:", error);
+      setBotellas(0); // Establecer a 0 en caso de error
     }
   };
 
-  obtenerPuntos(idusuario!) as unknown as number;
+  // Función para obtener el Historial (Escaneos/Canjes)
+  const obtenerHistorial = async () => {
+    if (!idusuario) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/obtenerHistorial?usuario_id=${idusuario}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data: Transaction[] = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Error al obtener historial:", error);
+      setTransactions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ HOOK: Llamar a las funciones al montar el componente
+  useEffect(() => {
+    if (idusuario) {
+      obtenerPuntos();
+      obtenerHistorial();
+    } else {
+      setIsLoading(false);
+      setBotellas(0);
+    }
+  }, [idusuario]);
+
+  // --- CÁLCULOS DERIVADOS ---
+
+  // Filtramos los escaneos (transacciones de tipo 'scan')
+  const escaneos = transactions.filter(t => t.type === 'scan');
+  const totalScans = escaneos.length;
+
+  // Lógica de Nivel basada en escaneos (totalScans)
+  const level = Math.floor(totalScans / 5) + 1;
+  const nextLevelScans = (level * 5) - totalScans;
+
+  // Manejo de carga de puntos para la visualización
+  const currentPoints = botellas !== null ? botellas : '...';
+  const displayScans = isLoading ? '...' : totalScans;
+
+  // Lógica para la Badge (basada en el ejemplo anterior)
+  const getLevelBadge = (points: number | null) => {
+    if (points === null) return 'Cargando...';
+    if (points < 60) return 'Nivel 1 - Eco Novice'; // Cambié la etiqueta Novice/Warrior/Hero para que tenga sentido con los niveles
+    if (points < 100) return 'Nivel 2 - Eco Warrior';
+    return 'Nivel 3 - Eco Hero';
+  };
 
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+
       <div className="text-center">
+        {/* Header y Nivel */}
         <div className="relative inline-block mb-4">
           <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
             <User className="w-12 h-12 text-white" />
@@ -69,7 +135,7 @@ export function Profile({ balance, totalScans, onViewStation, onLogout }: Profil
         <h1 className="text-gray-900 mb-1">{localStorage.getItem("usuario_nombre")}</h1>
         <p className="text-gray-500">{localStorage.getItem("usuario_correo")}</p>
         <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
-          { parseInt(botellas) < 60 ? 'Nivel 1 - Eco Warrior' : parseInt(botellas) < 100 ? 'Nivel 2 - Eco Hero' : 'Nivel 3 - Eco Novice' }
+          {getLevelBadge(botellas)}
         </Badge>
       </div>
 
@@ -80,20 +146,23 @@ export function Profile({ balance, totalScans, onViewStation, onLogout }: Profil
             <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <Leaf className="w-6 h-6 text-emerald-600" />
             </div>
-            <p className="text-gray-900">{botellas}</p>
+            {/* Puntos */}
+            <p className="text-gray-900">{botellas === null ? '...' : botellas.toLocaleString()}</p>
             <p className="text-gray-500">Puntos</p>
           </div>
           <div>
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-gray-900">{totalScans}</p>
+            {/* Escaneos Totales */}
+            <p className="text-gray-900">{displayScans}</p>
             <p className="text-gray-500">Escaneos</p>
           </div>
           <div>
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <Award className="w-6 h-6 text-purple-600" />
             </div>
+            {/* Nivel */}
             <p className="text-gray-900">{level}</p>
             <p className="text-gray-500">Nivel</p>
           </div>
@@ -105,7 +174,8 @@ export function Profile({ balance, totalScans, onViewStation, onLogout }: Profil
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-gray-700">Próximo nivel</p>
-            <p className="text-gray-900">{nextLevelScans} escaneos más</p>
+            {/* Próximos escaneos */}
+            <p className="text-gray-900">{isLoading ? '...' : `${nextLevelScans} escaneos más`}</p>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
@@ -118,8 +188,18 @@ export function Profile({ balance, totalScans, onViewStation, onLogout }: Profil
 
       {/* Menu Items */}
       <div className="space-y-2">
-
-
+        <Button
+          variant="ghost"
+          className="w-full justify-between hover:bg-gray-50"
+          onClick={onViewStation}
+        >
+          <div className="flex items-center gap-3">
+            <QrCode className="w-5 h-5" />
+            <span>Puntos de recolección</span>
+          </div>
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+        <Separator className="my-2" /> {/* Separador adicional si es necesario */}
         <MenuButton icon={<Settings className="w-5 h-5" />} label="Configuración" />
         <MenuButton icon={<Bell className="w-5 h-5" />} label="Notificaciones" />
         <MenuButton icon={<Shield className="w-5 h-5" />} label="Privacidad y seguridad" />
@@ -142,6 +222,10 @@ export function Profile({ balance, totalScans, onViewStation, onLogout }: Profil
   );
 }
 
+// ----------------------------------------------------------------
+// COMPONENTE AUXILIAR (Se mantiene igual)
+// ----------------------------------------------------------------
+
 function MenuButton({
   icon,
   label,
@@ -151,13 +235,13 @@ function MenuButton({
   icon: React.ReactNode;
   label: string;
   className?: string;
-  onClick?: () => void; // <-- tipo
+  onClick?: () => void;
 }) {
   return (
     <Button
       variant="ghost"
       className={`w-full justify-between hover:bg-gray-50 ${className}`}
-      onClick={onClick} // <-- conectar
+      onClick={onClick}
     >
       <div className="flex items-center gap-3">
         {icon}
@@ -167,4 +251,3 @@ function MenuButton({
     </Button>
   );
 }
-

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // ✅ Importar useEffect
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -27,6 +27,7 @@ interface RewardsProps {
 }
 
 const rewards: Reward[] = [
+  // ... (Tu lista de premios se mantiene igual)
   {
     id: '1',
     name: 'Descuento S/20 en tu compra',
@@ -56,7 +57,7 @@ const rewards: Reward[] = [
     description: '3 piezas de pollo + papas regulares + gaseosa mediana.',
     points: 600,
     category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllZCUyMGNoaWNrZW58ZW58MXx8fHwxNzYxNTYzNTYzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxmcmllZCUyMGNoaWNrZW58ZW58MXx8fHwxNzYxNTYzNTYzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     discount: 'Gratis',
     validity: '15 días'
   },
@@ -78,7 +79,7 @@ const rewards: Reward[] = [
     description: 'Helado mediano de cualquier sabor con topping.',
     points: 250,
     category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpY2UlMjBjcmVhbXxlbnwxfHx8fDE3NjE1NTM2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    image: 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxpY2UlMjBjcmVhbXxlbnwxfHx8fDE3NjE1NTM2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     discount: 'Gratis',
     validity: '15 días'
   },
@@ -100,7 +101,7 @@ const rewards: Reward[] = [
     description: 'Hamburguesa premium + papas grandes + bebida grande + postre.',
     points: 700,
     category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1688246780164-00c01647e78c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXJnZXIlMjBmb29kfGVufDF8fHx8MTc2MTU0NDUwMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    image: 'https://images.unsplash.com/photo-1688246780164-00c01647e78c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxidXJnZXIlMjBmb29kfGVufDF8fHx8MTc2MTU0NDUwMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     discount: '30% OFF',
     validity: '30 días'
   },
@@ -118,17 +119,48 @@ const rewards: Reward[] = [
 ];
 
 export function Rewards({ balance, onRedeem }: RewardsProps) {
+  const API_URL = "https://ecopoints.hvd.lat/api/";
+  const idusuario = localStorage.getItem("usuario_id");
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redeemedReward, setRedeemedReward] = useState<Reward | null>(null);
+  const [botellas, setBotellas] = useState("");
 
   const handleRedeemClick = (reward: Reward) => {
-    if (balance >= reward.points) {
+    // Asegurarse de que 'botellas' es un número para la comparación.
+    const currentPoints = parseFloat(botellas) || 0;
+    if (currentPoints >= reward.points) { // ✅ Usar currentPoints
       setSelectedReward(reward);
     } else {
       toast.error('No tienes suficientes ecopoints');
     }
   };
+
+  const obtenerPuntos = async (idusuario: string) => {
+    try {
+      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setBotellas(data.puntos);
+    } catch (error) {
+      console.error("Error al obtener puntos:", error);
+    }
+  };
+
+  // ✅ CORRECCIÓN: Usar useEffect para llamadas asíncronas al montar el componente
+  useEffect(() => {
+    if (idusuario) {
+      obtenerPuntos(idusuario);
+    }
+  }, [idusuario]);
+
+  // Se eliminó la línea `obtenerPuntos(idusuario!) as unknown as number;`
 
   const confirmRedeem = () => {
     if (selectedReward) {
@@ -136,7 +168,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
       setRedeemedReward(selectedReward);
       setSelectedReward(null);
       setShowSuccess(true);
-      
+
       setTimeout(() => {
         setShowSuccess(false);
         setRedeemedReward(null);
@@ -152,14 +184,16 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
   };
 
   const RewardCard = ({ reward }: { reward: Reward }) => {
-    const canAfford = balance >= reward.points;
+    // Usar los puntos de `botellas` para la verificación
+    const currentPoints = parseFloat(botellas) || 0;
+    const canAfford = currentPoints >= reward.points;
 
     return (
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
         <div className="relative">
           <div className="aspect-video bg-gray-200 overflow-hidden">
-            <ImageWithFallback 
-              src={reward.image} 
+            <ImageWithFallback
+              src={reward.image}
               alt={reward.name}
               className="w-full h-full object-cover"
             />
@@ -178,7 +212,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
             <h3 className="text-gray-900">{reward.name}</h3>
             <p className="text-gray-500 line-clamp-2">{reward.description}</p>
           </div>
-          
+
           <div className="flex items-center justify-between pt-2 border-t">
             <div className="flex items-center gap-1">
               <Leaf className="w-4 h-4 text-emerald-600" />
@@ -194,7 +228,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
               {canAfford ? 'Canjear' : 'Insuficiente'}
             </Button>
           </div>
-          
+
           {reward.validity && (
             <p className="text-gray-400">Válido por {reward.validity}</p>
           )}
@@ -203,10 +237,12 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
     );
   };
 
+  // ... (Resto de la función filterRewardsByCategory) ...
   const filterRewardsByCategory = (category?: string) => {
     if (!category || category === 'all') return rewards;
     return rewards.filter(r => r.category === category);
   };
+
 
   return (
     <div className="p-6 space-y-6 pb-24">
@@ -224,7 +260,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
           <div>
             <p className="text-emerald-100 mb-1">Tus ecopoints</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl">{balance}</span>
+              <span className="text-3xl">{botellas.toLocaleString()}</span>
               <span className="text-emerald-100">puntos</span>
             </div>
           </div>
@@ -285,12 +321,12 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
               ¿Estás seguro de canjear tus ecopoints por este premio?
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedReward && (
-            <div className="s</Dialog>pace-y-4">
+            <div className="space-y-4">
               <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                <ImageWithFallback 
-                  src={selectedReward.image} 
+                <ImageWithFallback
+                  src={selectedReward.image}
                   alt={selectedReward.name}
                   className="w-full h-full object-cover"
                 />
@@ -309,7 +345,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
               </div>
               <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg">
                 <span className="text-gray-700">Tu saldo después:</span>
-                <span className="text-gray-900">{balance - selectedReward.points} puntos</span>
+                <span className="text-gray-900">{(parseFloat(botellas) || 0) - selectedReward.points} puntos</span>
               </div>
             </div>
           )}
@@ -318,7 +354,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
             <Button variant="outline" onClick={() => setSelectedReward(null)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               className="bg-emerald-600 hover:bg-emerald-700"
               onClick={confirmRedeem}
             >
@@ -331,6 +367,9 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
       {/* Success Dialog */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
+          <DialogHeader> {/* ✅ CORRECCIÓN: Agregar DialogHeader y DialogTitle para A11y */}
+            <DialogTitle>Canje Exitoso</DialogTitle>
+          </DialogHeader>
           <div className="text-center space-y-4 py-6">
             <motion.div
               initial={{ scale: 0 }}
@@ -356,7 +395,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
                 </p>
               </Card>
             )}
-            <Button 
+            <Button
               className="w-full bg-emerald-600 hover:bg-emerald-700"
               onClick={() => setShowSuccess(false)}
             >

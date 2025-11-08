@@ -1,10 +1,14 @@
 "use client";
 
 import * as React from "react";
-import * as TooltipPrimitive from "@radix-ui/react-tooltip@1.1.8";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.8
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function TooltipProvider({
   delayDuration = 0,
   ...props

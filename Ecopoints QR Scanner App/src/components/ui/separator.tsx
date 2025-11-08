@@ -1,10 +1,14 @@
 "use client";
 
 import * as React from "react";
-import * as SeparatorPrimitive from "@radix-ui/react-separator@1.1.2";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.2
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function Separator({
   className,
   orientation = "horizontal",

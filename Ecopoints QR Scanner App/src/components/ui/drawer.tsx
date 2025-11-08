@@ -1,10 +1,15 @@
+
 "use client";
 
 import * as React from "react";
-import { Drawer as DrawerPrimitive } from "vaul@1.1.2";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.2
+import { Drawer as DrawerPrimitive } from "vaul";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto de tu código de Drawer iría aquí)
 function Drawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {

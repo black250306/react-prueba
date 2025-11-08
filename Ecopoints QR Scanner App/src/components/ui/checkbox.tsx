@@ -1,10 +1,16 @@
 "use client";
-
 import * as React from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox@1.1.4";
-import { CheckIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.1.4
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { CheckIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
+
+// ... (El resto del código es correcto)
 
 function Checkbox({
   className,

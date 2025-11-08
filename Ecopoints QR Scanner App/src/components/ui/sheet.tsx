@@ -1,11 +1,17 @@
 "use client";
 
 import * as React from "react";
-import * as SheetPrimitive from "@radix-ui/react-dialog@1.1.6";
-import { XIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.1.6
+import * as SheetPrimitive from "@radix-ui/react-dialog"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { XIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }

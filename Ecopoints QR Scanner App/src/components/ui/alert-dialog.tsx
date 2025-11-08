@@ -1,10 +1,15 @@
 "use client";
 
 import * as React from "react";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog@1.1.6";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.6
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
+
+// ... (El resto del código es funcional y no necesita cambios)
 
 function AlertDialog({
   ...props

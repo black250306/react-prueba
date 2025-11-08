@@ -1,10 +1,14 @@
 "use client";
 
 import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover@1.1.6";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN: Quitar @1.1.6
+import * as PopoverPrimitive from "@radix-ui/react-popover"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function Popover({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {

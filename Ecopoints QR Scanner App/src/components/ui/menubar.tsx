@@ -1,10 +1,17 @@
 "use client";
 
 import * as React from "react";
-import * as MenubarPrimitive from "@radix-ui/react-menubar@1.1.6";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.1.6
+import * as MenubarPrimitive from "@radix-ui/react-menubar"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
+
+// ... (El resto del código es correcto)
 
 function Menubar({
   className,

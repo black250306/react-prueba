@@ -1,11 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { GripVerticalIcon } from "lucide-react@0.487.0";
-import * as ResizablePrimitive from "react-resizable-panels@2.1.7";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @0.487.0
+import { GripVerticalIcon } from "lucide-react"; 
+// ✅ CORRECCIÓN 2: Quitar @2.1.7
+import * as ResizablePrimitive from "react-resizable-panels";
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function ResizablePanelGroup({
   className,
   ...props

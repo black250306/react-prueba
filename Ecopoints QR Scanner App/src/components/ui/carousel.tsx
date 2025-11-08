@@ -1,14 +1,18 @@
 "use client";
-
 import * as React from "react";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @8.6.0
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
-} from "embla-carousel-react@8.6.0";
-import { ArrowLeft, ArrowRight } from "lucide-react@0.487.0";
+} from "embla-carousel-react"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { ArrowLeft, ArrowRight } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 import { Button } from "./button";
-
+// ... (El resto del código es correcto)
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];

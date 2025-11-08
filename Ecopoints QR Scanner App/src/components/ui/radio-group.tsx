@@ -1,11 +1,17 @@
 "use client";
 
 import * as React from "react";
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group@1.2.3";
-import { CircleIcon } from "lucide-react@0.487.0";
+// ----------------------------------------------------
+// ✅ CORRECCIÓN 1: Quitar @1.2.3
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"; 
+
+// ✅ CORRECCIÓN 2: Quitar @0.487.0
+import { CircleIcon } from "lucide-react"; 
+// ----------------------------------------------------
 
 import { cn } from "./utils";
 
+// ... (El resto del código es correcto)
 function RadioGroup({
   className,
   ...props
