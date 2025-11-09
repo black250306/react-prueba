@@ -4,11 +4,10 @@ import { motion } from "framer-motion";
 import { Leaf, User, Mail, Lock, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-
+import { Card } from "@/components/ui/card";
 interface LoginProps {
   onLoginSuccess: (usuarioId: string) => void;
 }
-
 export default function Login({ onLoginSuccess }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -72,7 +71,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full bg">
         {/* Header */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -80,8 +79,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           transition={{ duration: 0.5 }}
           className="text-center mb-8 "
         >
-          <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full shadow-lg mb-2 ">
-            <Leaf className="w-16 h-16 text-emerald-600" />
+          <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full shadow-lg mb-4">
+            <Leaf className="w-24 h-24 text-emerald-600" />
           </div>
           <h1 className="text-white  mb-2 text-4xl font-medium">EcoPoints</h1>
           <p className="text-emerald-100 font-medium mb-4">Recicla, gana puntos y cambia el mundo</p>
@@ -92,19 +91,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className=" bg-white rounded-2xl shadow-2xl p-8"
+          className=" bg-white rounded-2xl shadow-2xl p-8flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg"
         >
+           <Card className="p-8 shadow-2xl">
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 bg-blue p-1 rounded-lg">
+          <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 rounded-md transition-all ${isLogin ? 'bg-blue-700 text-emerald-600 dark:text-emerald-400  shadow' : 'text-white'}`}
+              className={`flex-1 py-2 rounded-md transition-all ${isLogin ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow'
+                    : 'text-gray-600 dark:text-gray-400'}`}
             >
               Iniciar sesión
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 rounded-md transition-all ${!isLogin ? 'bg-blue-700 text-emerald-600 dark:text-emerald-400  shadow' : 'text-white'}`}
+              className={`flex-1 py-2 rounded-md transition-all ${!isLogin ?'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow'
+                    : 'text-gray-600 dark:text-gray-400'}`}
             >
               Registrarse
             </button>
@@ -185,12 +187,14 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             </div>
           )}
 
-          <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-            <p className="text-emerald-700 text-center">
+          <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
+            <p className="text-emerald-700 dark:text-emerald-300 text-center">
               ♻️ Únete a nuestra comunidad de {isLogin ? "recicladores" : "más de 1,000 usuarios"} comprometidos con el planeta
             </p>
           </div>
+          </Card>
         </motion.div>
+        
 
         {/* Footer */}
         <motion.div

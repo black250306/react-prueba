@@ -8,8 +8,6 @@ import { MinusIcon } from "lucide-react";
 // ----------------------------------------
 import { cn } from "./utils";
 
-// ... el resto de tu código
-
 function InputOTP({
   className,
   containerClassName,

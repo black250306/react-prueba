@@ -1,8 +1,7 @@
-import { Transaction } from '../App';
 import { useEffect, useState } from "react";
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowUpRight, Gift, Leaf, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, Gift, Leaf } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface HomeProps {
@@ -12,7 +11,8 @@ interface HomeProps {
 export function Home({ onNavigateToRewards }: HomeProps) {
   const API_URL = "https://ecopoints.hvd.lat/api/";
   const idusuario = localStorage.getItem("usuario_id");
-  const [botellas, setBotellas] = useState("");
+  const [botellas, setBotellas] = useState(0);
+  const [mostrarTodo, setMostrarTodo] = useState(false);
 
   type Transaction = {
     id: string;
@@ -36,45 +36,45 @@ export function Home({ onNavigateToRewards }: HomeProps) {
     }
   };
 
-  useEffect(() => {
-    obtenerHistorial();
-  }, [idusuario]);
-
   const obtenerPuntos = async (idusuario: string) => {
     try {
-      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`, {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      setBotellas(data.puntos);
-
+      setBotellas(data.puntos || 0);
     } catch (error) {
       console.error("Error al obtener puntos:", error);
     }
   };
 
-  obtenerPuntos(idusuario!) as unknown as number;
+  useEffect(() => {
+    if (idusuario) {
+      obtenerHistorial();
+      obtenerPuntos(idusuario);
+    }
+  }, [idusuario]);
 
-
+  // Mostrar solo las primeras 4 si no se ha activado "ver todo"
+  const transaccionesAMostrar = mostrarTodo
+    ? recentTransactions
+    : recentTransactions.slice(0, 4);
 
   return (
-    <div className="p-6 space-y-6 --tw-inset-shadow-alpha">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-500">Hola,</p>
-          <h1 className="text-gray-900">{localStorage.getItem("usuario_nombre")}</h1>
+          <p className="text-gray-500 dark:text-gray-400">Hola,</p>
+          <h1 className="text-gray-900 dark:text-white">
+            {localStorage.getItem("usuario_nombre")}
+          </h1>
         </div>
-        <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
-          <Leaf className="w-6 h-6 text-white" />
+        <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
+          <Leaf className="w-10 h-10 text-white" />
         </div>
       </div>
 
+      {/* Balance */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -88,9 +88,19 @@ export function Home({ onNavigateToRewards }: HomeProps) {
             </div>
             <div className="space-y-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl">{botellas.toLocaleString()}</span>
-                <span className="text-xl text-emerald-100">ecopoints</span>
+                {botellas
+                  ? (
+                    <>
+                      <span className="text-4xl font-semibold">{botellas.toLocaleString()}</span>
+                      <span className="text-xl text-emerald-100">ecopoints</span>
+                    </>
+                  )
+                  : (
+                    <span className="text-sm text-emerald-100 italic">Cargando...</span>
+                  )
+                }
               </div>
+
             </div>
             <div className="flex gap-3 pt-2">
               <Button
@@ -114,47 +124,58 @@ export function Home({ onNavigateToRewards }: HomeProps) {
       {/* Recent Activity */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-gray-900">Actividad reciente</h2>
-          <button className="text-emerald-600 flex items-center gap-1">
-            Ver todo
+          <h2 className="text-gray-900 dark:text-white">Actividad reciente</h2>
+          <button
+            onClick={() => setMostrarTodo(!mostrarTodo)}
+            className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
+          >
+            {mostrarTodo ? "Ver menos" : "Ver todo"}
             <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
-        <div className="space-y-3">
-          {recentTransactions.map((transaction) => (
+
+        {/* Lista con scroll si muestra todas */}
+        <div className={`space-y-3 ${mostrarTodo ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}>
+          {transaccionesAMostrar.map((transaction) => (
             <motion.div
               key={transaction.id}
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="p-4">
+              <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${transaction.type === 'scan'
-                      ? 'bg-emerald-100'
-                      : 'bg-orange-100'
-                      }`}>
-                      {transaction.type === 'scan' ? (
-                        <Leaf className="w-5 h-5 text-emerald-600" />
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900 ${transaction.type === "scan" ? "bg-emerald-100" : "bg-orange-100"
+                        }`}
+                    >
+                      {transaction.type === "scan" ? (
+                        <Leaf className="lucide lucide-leaf w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       ) : (
                         <Gift className="w-5 h-5 text-orange-600" />
                       )}
                     </div>
                     <div>
-                      <p className="text-gray-900">{transaction.description}</p>
-                      <p className="text-gray-500">{transaction.location}</p>
+                      <p className="text-gray-900 dark:text-white">{transaction.description}</p>
+                      <p className="text-gray-500 text-smtext-gray-500 dark:text-gray-400">{transaction.location}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`${transaction.type === 'scan'
-                      ? 'text-emerald-600'
-                      : 'text-orange-600'
-                      }`}>
-                      {transaction.type === 'scan' ? '+' : ''}{transaction.points}
+                    <p
+                      className={`${transaction.type === "scan"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-orange-600"
+                        } font-semibold`}
+                    >
+                      {transaction.type === "scan" ? "+" : ""}
+                      {transaction.points}
                     </p>
-                    <p className="text-gray-500">
-                      {new Date(transaction.date.replace(" ", "T")).toLocaleDateString("es-PE", { day: "numeric", month: "short" })}
+                    <p className="text-gray-500 text-sm">
+                      {new Date(transaction.date.replace(" ", "T")).toLocaleDateString("es-PE", {
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </p>
                   </div>
                 </div>

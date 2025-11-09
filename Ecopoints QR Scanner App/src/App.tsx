@@ -8,122 +8,99 @@ import { BottomNav } from './components/BottomNav';
 import { Toaster } from './components/ui/sonner';
 import Login from './components/Login';
 
-export interface Transaction {
-  id: string;
-  type: 'scan' | 'redeem';
-  points: number;
-  description: string;
-  date: Date;
-  location?: string;
-}
-
 export default function App() {
-  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingLogin, setIsCheckingLogin] = useState(true);
+  const [currentView, setCurrentView] = useState<'home' | 'scan' | 'history' | 'profile' | 'rewards'>('home');
+  const [balance, setBalance] = useState(0);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const [currentView, setCurrentView] = useState<'home' | 'scan' | 'history' | 'profile' | 'rewards' >('home');
-  const [balance, setBalance] = useState(850);
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      type: 'scan',
-      points: 50,
-      description: 'Reciclaje de botellas',
-      date: new Date(2025, 9, 27, 14, 30),
-      location: 'EcoPoint Miraflores'
-    },
-    {
-      id: '2',
-      type: 'scan',
-      points: 100,
-      description: 'Reciclaje de papel',
-      date: new Date(2025, 9, 26, 10, 15),
-      location: 'EcoPoint San Isidro'
-    },
-    {
-      id: '3',
-      type: 'redeem',
-      points: -200,
-      description: 'Canje por descuento',
-      date: new Date(2025, 9, 25, 16, 45),
-      location: 'Tienda Verde'
-    },
-    {
-      id: '4',
-      type: 'scan',
-      points: 75,
-      description: 'Reciclaje de latas',
-      date: new Date(2025, 9, 24, 12, 20),
-      location: 'EcoPoint Surco'
+  // Detectar el tema del sistema/navegador
+  useEffect(() => {
+    const detectSystemTheme = () => {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme('dark');
+      } else {
+        setTheme('light');
+      }
+    };
+
+    // Detectar tema al cargar
+    detectSystemTheme();
+
+    // Escuchar cambios en el tema del sistema
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+
+    // Agregar listener para cambios
+    mediaQuery.addEventListener('change', handleThemeChange);
+
+    // Limpiar listener al desmontar
+    return () => mediaQuery.removeEventListener('change', handleThemeChange);
+  }, []);
+
+  // Aplicar tema al documento HTML
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  ]);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     const usuarioId = localStorage.getItem("usuario_id");
-    if (usuarioId) {
-      setIsLoggedIn(true);
-    }
+    if (usuarioId) setIsLoggedIn(true);
+    setIsCheckingLogin(false);
   }, []);
-
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'date'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: Date.now().toString(),
-      date: new Date()
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-    setBalance(prev => prev + transaction.points);
-  };
-
-  const handleRedeem = (reward: Reward) => {
-    addTransaction({
-      type: 'redeem',
-      points: -reward.points,
-      description: `${reward.brand} - ${reward.name}`,
-      location: 'Canje online'
-    });
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("usuario_id");
     setIsLoggedIn(false);
   };
 
+  const handleRedeem = (reward: Reward) => {
+    // Puedes enviar esta acción a tu API también si lo necesitas
+    setBalance(prev => prev - reward.points);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'home':
-        return (
-          <Home
-            onNavigateToRewards={() => setCurrentView('rewards')}
-          />
-        );
+        return <Home onNavigateToRewards={() => setCurrentView('rewards')} />;
       case 'scan':
         return <QRScanner />;
       case 'history':
-        return <History transactions={transactions} />;
+        return <History />;
       case 'profile':
         return (
           <Profile
-            balance={balance}
-            totalScans={transactions.filter(t => t.type === 'scan').length}
-
             onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
           />
         );
       case 'rewards':
         return <Rewards balance={balance} onRedeem={handleRedeem} />;
-      
       default:
-        return (
-          <Home
-            onNavigateToRewards={() => setCurrentView('rewards')}
-          />
-        );
+        return <Home onNavigateToRewards={() => setCurrentView('rewards')} />;
     }
   };
 
-  // ✅ Si NO está logueado, mostrar pantalla de login
-  if (!isLoggedIn) {
+  if (isCheckingLogin)
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900">
+        Cargando...
+      </div>
+    );
+
+  if (!isLoggedIn)
     return (
       <Login
         onLoginSuccess={(usuarioId: string) => {
@@ -132,25 +109,15 @@ export default function App() {
         }}
       />
     );
-  }
 
-
-
-  // ✅ App principal
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50">
-      <div className="max-w-md mx-auto min-h-screen flex flex-col shadow-xl">
-        
-
-        {/* Contenido principal */}
-        <div className="flex-1 overflow-auto pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col shadow-xl dark:shadow-gray-900">
+        <div className="flex-1 overflow-auto pb-20 bg-humo dark:bg-gray-900">
           {renderView()}
         </div>
-
-        {/* Navegación inferior */}
         <BottomNav currentView={currentView} onNavigate={setCurrentView} />
       </div>
-
       <Toaster />
     </div>
   );

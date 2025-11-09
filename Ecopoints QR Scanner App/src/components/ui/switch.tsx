@@ -1,14 +1,11 @@
 "use client";
 
 import * as React from "react";
-// ----------------------------------------------------
-// ✅ CORRECCIÓN: Quitar @1.1.3
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 // ----------------------------------------------------
 
 import { cn } from "./utils";
 
-// ... (El resto del código es correcto)
 function Switch({
   className,
   ...props

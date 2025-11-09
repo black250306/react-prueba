@@ -260,9 +260,19 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
           <div>
             <p className="text-emerald-100 mb-1">Tus ecopoints</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl">{botellas.toLocaleString()}</span>
-              <span className="text-emerald-100">puntos</span>
+              {botellas
+                ? (
+                  <>
+                    <span className="text-3xl font-semibold">{botellas.toLocaleString()}</span>
+                    <span className="text-emerald-100">puntos</span>
+                  </>
+                )
+                : (
+                  <span className="text-sm text-emerald-100 italic">Cargando...</span>
+                )
+              }
             </div>
+
           </div>
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
             <Gift className="w-8 h-8" />
