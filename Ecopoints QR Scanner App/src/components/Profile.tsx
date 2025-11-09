@@ -240,14 +240,16 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
       {/* Opciones */}
       <div className="space-y-2">
-        <Separator className="my-2" />
-        <MenuButton icon={<QrCode className="w-5 h-5" />} label="Puntos de Recoleccion" onClick={() => setActiveSection("")} />
+        
+      <Separator className="my-2" />
+      
+        <MenuButton icon={<QrCode className="w-5 h-5" />} label="Puntos de recoleccion" onClick={() => setActiveSection("")} />
         <MenuButton icon={<Settings className="w-5 h-5" />} label="Configuración" onClick={() => setActiveSection("configuracion")} />
         <MenuButton icon={<Bell className="w-5 h-5" />} label="Notificaciones" onClick={() => setActiveSection("notificaciones")} />
         <MenuButton icon={<Shield className="w-5 h-5" />} label="Privacidad y seguridad" onClick={() => setActiveSection("privacidad")} />
         <Separator className="my-4" />
         <MenuButton icon={<HelpCircle className="w-5 h-5" />} label="Ayuda y soporte" onClick={() => setActiveSection("ayuda")} />
-        <MenuButton icon={<LogOut className="w-5 h-5" />} label="Cerrar sesión" className="text-red-600" onClick={onLogout} />
+        <MenuButtonsa icon={<LogOut className="w-5 h-5" />} label="Cerrar sesión" className="text-red-600" onClick={onLogout} />
       </div>
 
       <div className="text-center pt-4">
@@ -278,6 +280,14 @@ function MenuButton({ icon, label, className = '', onClick }: { icon: React.Reac
   return (
     <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${className}`} onClick={onClick}>
       <div className="flex items-center gap-3">{icon}<span>{label}</span></div>
+      <ChevronRight className="w-5 h-5" />
+    </Button>
+  );
+}
+function MenuButtonsa({ icon, label, className = '', onClick }: { icon: React.ReactNode; label: string; className?: string; onClick?: () => void }) {
+  return (
+    <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${className}`} onClick={onClick}>
+      <div className="flex items-center gap-3 text-red-600">{icon}<span>{label}</span></div>
       <ChevronRight className="w-5 h-5" />
     </Button>
   );
