@@ -15,7 +15,6 @@ export default function App() {
   const [balance, setBalance] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Detectar el tema del sistema/navegador
   useEffect(() => {
     const detectSystemTheme = () => {
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -25,23 +24,18 @@ export default function App() {
       }
     };
 
-    // Detectar tema al cargar
+    
     detectSystemTheme();
 
-    // Escuchar cambios en el tema del sistema
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleThemeChange = (e: MediaQueryListEvent) => {
       setTheme(e.matches ? 'dark' : 'light');
     };
-
-    // Agregar listener para cambios
     mediaQuery.addEventListener('change', handleThemeChange);
 
-    // Limpiar listener al desmontar
     return () => mediaQuery.removeEventListener('change', handleThemeChange);
   }, []);
 
-  // Aplicar tema al documento HTML
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
