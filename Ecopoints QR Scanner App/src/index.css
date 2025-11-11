@@ -1249,6 +1249,9 @@
   .dark\:bg-gray-800:is(.dark *) {
     background-color: var(--color-gray-800);
   }
+    .dark\:bg-red-600:is(.dark *) {
+    background-color: var(--color-red-600);
+  }
 
   @supports (color: color-mix(in lab, red, red)) {
     .bg-gray-800\/50 {

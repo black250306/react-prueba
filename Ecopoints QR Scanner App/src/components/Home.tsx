@@ -20,7 +20,7 @@ export function Home({ onNavigateToRewards }: HomeProps) {
     description: string;
     location: string;
     points: number;
-    date: string;
+    date: string; 
   };
 
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
@@ -168,7 +168,7 @@ export function Home({ onNavigateToRewards }: HomeProps) {
                           : "text-orange-600"
                         } font-semibold`}
                     >
-                      {transaction.type === "scan" ? "+" : ""}
+                      {transaction.type === "scan" ? "+" : "-"}
                       {transaction.points}
                     </p>
                     <p className="text-gray-500 text-sm">

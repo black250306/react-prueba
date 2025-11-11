@@ -282,6 +282,9 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
 export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [passwordData, setPasswordData] = useState({
         current: '',
         new: '',
@@ -296,19 +299,69 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
         dataCollection: true
     });
 
-    const handlePasswordChange = () => {
+    const handlePasswordChange = async () => {
+        // Validaciones
+        if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+            toast.error('Todos los campos son obligatorios');
+            return;
+        }
+
         if (passwordData.new !== passwordData.confirm) {
             toast.error('Las contraseñas no coinciden');
             return;
         }
+
         if (passwordData.new.length < 6) {
             toast.error('La contraseña debe tener al menos 6 caracteres');
             return;
         }
 
-        toast.success('Contraseña actualizada exitosamente');
-        setShowChangePassword(false);
-        setPasswordData({ current: '', new: '', confirm: '' });
+        if (passwordData.new === passwordData.current) {
+            toast.error('La nueva contraseña debe ser diferente a la actual');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            // Obtener el usuario_id - AJUSTA ESTO SEGÚN TU SISTEMA
+            const usuario_id = localStorage.getItem('usuario_id') || '2';
+
+            const requestBody = {
+                usuario_id: parseInt(usuario_id),
+                contrasena_actual: passwordData.current,
+                nueva_contrasena: passwordData.new
+            };
+
+            const response = await fetch('https://ecopoints.hvd.lat/api/actualizarContrasena', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Éxito
+                toast.success(data.mensaje || 'Contraseña actualizada exitosamente');
+                setShowChangePassword(false);
+                setPasswordData({ current: '', new: '', confirm: '' });
+            } else {
+                // Error
+                if (data.error && data.error.includes('incorrecta')) {
+                    toast.error('La contraseña actual es incorrecta');
+                } else {
+                    toast.error(data.error || 'Error al cambiar la contraseña');
+                }
+            }
+        } catch (error) {
+            console.error('Error al cambiar contraseña:', error);
+            toast.error('Error de conexión. Intenta nuevamente.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     function setShowPrivacy(show: boolean): void {
@@ -316,6 +369,7 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
             onClose?.();
         }
     }
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
@@ -358,11 +412,14 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                                         className="pl-10 pr-10"
                                         value={passwordData.current}
                                         onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                                        placeholder="Ingresa tu contraseña actual"
+                                        disabled={isLoading}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        disabled={isLoading}
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -371,30 +428,75 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
 
                             <div className="space-y-2">
                                 <Label htmlFor="new-password">Nueva contraseña</Label>
-                                <Input
-                                    id="new-password"
-                                    type={showPassword ? "text" : "password"}
-                                    value={passwordData.new}
-                                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="new-password"
+                                        type={showNewPassword ? "text" : "password"}
+                                        value={passwordData.new}
+                                        onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                                        placeholder="Mínimo 6 caracteres"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        disabled={isLoading}
+                                    >
+                                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="confirm-password">Confirmar contraseña</Label>
-                                <Input
-                                    id="confirm-password"
-                                    type={showPassword ? "text" : "password"}
-                                    value={passwordData.confirm}
-                                    onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="confirm-password"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={passwordData.confirm}
+                                        onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                                        placeholder="Repite tu nueva contraseña"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        disabled={isLoading}
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
 
-                            <Button
-                                onClick={handlePasswordChange}
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                                Actualizar contraseña
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowChangePassword(false);
+                                        setPasswordData({ current: '', new: '', confirm: '' });
+                                    }}
+                                    className="flex-1"
+                                    disabled={isLoading}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    onClick={handlePasswordChange}
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Actualizando...
+                                        </div>
+                                    ) : (
+                                        'Actualizar contraseña'
+                                    )}
+                                </Button>
+                            </div>
                         </div>
                     )}
 

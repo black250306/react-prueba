@@ -4,12 +4,11 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { Gift, Leaf, Sparkles, Tag, CheckCircle2 } from 'lucide-react';
+import { Gift, Leaf, Sparkles, Tag, CheckCircle2, Package } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
-// Definición de la interfaz Reward, incluyendo campos opcionales para el canje.
 export interface Reward {
   id: string;
   name: string;
@@ -18,56 +17,86 @@ export interface Reward {
   points: number;
   category: 'restaurant' | 'cafe' | 'retail' | 'entertainment' | string;
   image: string;
-  discount?: string;
   validity?: string;
-  // Campos agregados temporalmente para el diálogo de éxito
   codigo_entrega?: string;
+  stock: number; // ✅ Nuevo campo para el stock
 }
 
 interface RewardsProps {
-  balance: number; // Mantenido por si se usa fuera del componente, aunque 'botellas' lo reemplaza
+  balance: number;
   onRedeem: (reward: Reward) => void;
 }
 
 export function Rewards({ onRedeem }: RewardsProps) {
-  //  1. CONFIGURACIÓN DE ENDPOINTS
   const API_BASE_URL = "https://ecopoints.hvd.lat/";
-  const LISTAR_CONVENIOS_ENDPOINT = "listarConvenios";
-  const REGISTRAR_CANJE_ENDPOINT = "canjearPuntos";
-  const OBTENER_PUNTOS_ENDPOINT = "obtenerPuntos";
+  const LISTAR_CONVENIOS_ENDPOINT = "api/listarConvenios";
+  const REGISTRAR_CANJE_ENDPOINT = "api/canjearPuntos";
+  const OBTENER_PUNTOS_ENDPOINT = "api/obtenerPuntos";
 
   const idusuario = localStorage.getItem("usuario_id");
 
-  // 2. ESTADOS
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loadingRewards, setLoadingRewards] = useState(true);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redeemedReward, setRedeemedReward] = useState<Reward | null>(null);
-  const [botellas, setBotellas] = useState("0"); // Puntos del usuario (como string)
+  const [botellas, setBotellas] = useState("0");
 
-  // --- Funciones de Llamada a la API ---
-
-  // Función para obtener los puntos del usuario
-  const obtenerPuntos = async () => {
-    if (!idusuario) return;
-    try {
-      // URL: https://ecopoints.hvd.lat/obtenerPuntos?usuario_id=...
-      const response = await fetch(`${API_BASE_URL}${OBTENER_PUNTOS_ENDPOINT}?usuario_id=${idusuario}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      setBotellas(data.puntos ? data.puntos.toString() : "0");
-    } catch (error) {
-      console.error("Error al obtener puntos:", error);
-      setBotellas("0");
+  // Función para mapear empresas a categorías
+  const mapCategory = (empresa: string): string => {
+    if (!empresa) return 'other';
+    
+    const empresaLower = empresa.toLowerCase();
+    
+    if (empresaLower.includes('bembos') || 
+        empresaLower.includes('mcdonald') || 
+        empresaLower.includes('burger') ||
+        empresaLower.includes('kfc') ||
+        empresaLower.includes('pizza') ||
+        empresaLower.includes('restaurant') ||
+        empresaLower.includes('comida') ||
+        empresaLower.includes('hamburguesa') ||
+        empresaLower.includes('combo')) {
+      return 'restaurant';
     }
+    
+    if (empresaLower.includes('café') || 
+        empresaLower.includes('cafe') || 
+        empresaLower.includes('starbucks') ||
+        empresaLower.includes('coffee') ||
+        empresaLower.includes('barista') ||
+        empresaLower.includes('tostado')) {
+      return 'cafe';
+    }
+    
+    if (empresaLower.includes('retail') || 
+        empresaLower.includes('tienda') || 
+        empresaLower.includes('super') ||
+        empresaLower.includes('market') ||
+        empresaLower.includes('ropa') ||
+        empresaLower.includes('zara') ||
+        empresaLower.includes('h&m') ||
+        empresaLower.includes('moda') ||
+        empresaLower.includes('store')) {
+      return 'retail';
+    }
+    
+    if (empresaLower.includes('cine') || 
+        empresaLower.includes('movie') || 
+        empresaLower.includes('teatro') ||
+        empresaLower.includes('entertainment') ||
+        empresaLower.includes('diversion') ||
+        empresaLower.includes('pelicula')) {
+      return 'entertainment';
+    }
+    
+    return 'other';
   };
 
-  // ✅ Función para obtener la lista de convenios
+  // ✅ Función para obtener la lista de convenios CON STOCK
   const listarConvenios = async () => {
     setLoadingRewards(true);
     try {
-      // URL: https://ecopoints.hvd.lat/listarConvenios
       const response = await fetch(`${API_BASE_URL}${LISTAR_CONVENIOS_ENDPOINT}`);
 
       if (!response.ok) {
@@ -75,21 +104,19 @@ export function Rewards({ onRedeem }: RewardsProps) {
       }
 
       const data = await response.json();
+      
+      console.log("Datos recibidos de convenios:", data);
 
-      // Mapeo basado en las columnas de tu tabla 'convenios'
       const mappedRewards: Reward[] = data.map((item: any) => ({
         id: item.id.toString(),
         name: item.titulo || 'Convenio sin título',
-        brand: item.empresa_id ? `Empresa ID: ${item.empresa_id}` : 'Marca Desconocida',
+        brand: item.empresa || 'Empresa no especificada',
         description: item.descripcion || 'Sin descripción',
         points: parseInt(item.puntos_requeridos) || 0,
-
-        // Asume que 'categoria', 'url_imagen', 'descuento' y 'vigencia' 
-        // son retornados por el script PHP que genera el JSON.
-        category: item.categoria || 'other',
-        image: item.url_imagen || 'https://images.unsplash.com/photo-1542831371-29b0f74f9d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1lYWx8ZW58MXx8fHwxNzYzMTk2NzU5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-        discount: item.descuento || undefined,
-        validity: item.vigencia || undefined,
+        category: mapCategory(item.empresa),
+        image: item.imagen_url || item.logo_url || 'https://images.unsplash.com/photo-1542831371-29b0f74f9d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1lYWx8ZW58MXx8fHwxNzYzMTk2NzU5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+        validity: item.vigencia || "30 días",
+        stock: parseInt(item.stock) || 0, // ✅ Incluir stock del JSON
       }));
 
       setRewards(mappedRewards);
@@ -102,62 +129,101 @@ export function Rewards({ onRedeem }: RewardsProps) {
     }
   };
 
+  const obtenerPuntos = async () => {
+    if (!idusuario) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}${OBTENER_PUNTOS_ENDPOINT}?usuario_id=${idusuario}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setBotellas(data.puntos ? data.puntos.toString() : "0");
+    } catch (error) {
+      console.error("Error al obtener puntos:", error);
+      setBotellas("0");
+    }
+  };
 
-  // ✅ Función para registrar el canje
+  // ✅ FUNCIÓN CORREGIDA PARA MANEJAR EL JSON DE LA API
   const registrarCanje = async (reward: Reward) => {
     if (!idusuario) {
       toast.error("Error: Sesión de usuario no encontrada.");
       return;
     }
 
-    // Cerramos el diálogo de confirmación mientras se procesa la solicitud
     setSelectedReward(null);
 
     try {
-      // URL: https://ecopoints.hvd.lat/canjearPuntos (POST)
+      console.log("📤 Enviando solicitud de canje:", {
+        usuario_id: parseInt(idusuario),
+        convenio_id: parseInt(reward.id)
+      });
+
       const response = await fetch(`${API_BASE_URL}${REGISTRAR_CANJE_ENDPOINT}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          usuario_id: idusuario,
-          convenio_id: reward.id,
+          usuario_id: parseInt(idusuario),
+          convenio_id: parseInt(reward.id)
         }),
       });
 
       const data = await response.json();
+      
+      console.log("📨 Respuesta del canje:", data);
 
-      // Manejo de errores basado en tu PHP (status 400 o propiedad 'error')
+      // ✅ MANEJO CORREGIDO DEL JSON DE RESPUESTA
       if (!response.ok || data.error) {
-        throw new Error(data.error || 'Fallo desconocido al registrar el canje.');
+        // Manejar diferentes tipos de errores
+        if (data.error && data.error.includes('puntos insuficientes')) {
+          throw new Error('No tienes suficientes puntos para este canje.');
+        } else if (data.error && data.error.includes('stock')) {
+          throw new Error('Este premio ya no está disponible.');
+        } else {
+          throw new Error(data.error || 'Error al procesar el canje.');
+        }
       }
 
-      // Canje Exitoso
-      onRedeem(reward);
+      // ✅ VERIFICAR SI LA RESPUESTA ES EXITOSA SEGÚN EL NUEVO JSON
+      if (data.mensaje && data.mensaje.includes('éxito')) {
+        // Canje exitoso
+        onRedeem(reward);
 
-      setRedeemedReward({
-        ...reward,
-        codigo_entrega: data.codigo_entrega,
-      });
+        setRedeemedReward({
+          ...reward,
+          codigo_entrega: data.codigo_entrega, // ✅ Usar el código del JSON
+        });
 
-      setShowSuccess(true);
+        setShowSuccess(true);
 
-      obtenerPuntos();
-      listarConvenios();
+        // ✅ Actualizar puntos con los puntos restantes del JSON
+        if (data.puntos_restantes !== undefined) {
+          setBotellas(data.puntos_restantes.toString());
+        } else {
+          // Si no vienen puntos restantes, obtenerlos de nuevo
+          await obtenerPuntos();
+        }
 
-      setTimeout(() => {
-        setShowSuccess(false);
-        setRedeemedReward(null);
-      }, 5000);
+        // Actualizar lista de convenios
+        await listarConvenios();
+
+        toast.success('¡Canje realizado exitosamente!');
+
+        setTimeout(() => {
+          setShowSuccess(false);
+          setRedeemedReward(null);
+        }, 15000); // 15 segundos para que el usuario pueda copiar el código
+
+      } else {
+        throw new Error(data.mensaje || 'Error desconocido al procesar el canje.');
+      }
 
     } catch (error: any) {
-      console.error("Error al registrar el canje:", error);
+      console.error("❌ Error al registrar el canje:", error);
       toast.error(error.message || 'Error de conexión. Inténtalo más tarde.');
-      // Si hay error, permitimos que el usuario lo intente de nuevo
-      setSelectedReward(reward);
     }
   };
+
   useEffect(() => {
     listarConvenios();
     if (idusuario) {
@@ -165,12 +231,14 @@ export function Rewards({ onRedeem }: RewardsProps) {
     }
   }, [idusuario]);
 
-  // --- Lógica y Handlers ---
-
   const handleRedeemClick = (reward: Reward) => {
     const currentPoints = parseFloat(botellas) || 0;
-    if (currentPoints >= reward.points) {
+    const hasStock = reward.stock > 0;
+    
+    if (currentPoints >= reward.points && hasStock) {
       setSelectedReward(reward);
+    } else if (!hasStock) {
+      toast.error('Este premio ya no está disponible.');
     } else {
       toast.error('No tienes suficientes ecopoints');
     }
@@ -178,7 +246,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
   const confirmRedeem = () => {
     if (selectedReward) {
-      // Llama a la función de registro real en la API
       registrarCanje(selectedReward);
     }
   };
@@ -188,11 +255,11 @@ export function Rewards({ onRedeem }: RewardsProps) {
     return rewards.filter(r => r.category.toLowerCase() === category.toLowerCase());
   };
 
-  // --- Componente RewardCard (sin cambios funcionales) ---
-
   const RewardCard = ({ reward }: { reward: Reward }) => {
     const currentPoints = parseFloat(botellas) || 0;
     const canAfford = currentPoints >= reward.points;
+    const hasStock = reward.stock > 0;
+    const canRedeem = canAfford && hasStock;
 
     return (
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -204,34 +271,53 @@ export function Rewards({ onRedeem }: RewardsProps) {
               className="w-full h-full object-cover"
             />
           </div>
-          {reward.discount && (
-            <Badge className="absolute top-2 right-2 bg-red-500 text-white">
-              {reward.discount}
-            </Badge>
-          )}
+          
+          {/* ✅ BADGE DE STOCK */}
+          <div className="absolute top-2 left-2">
+            {hasStock ? (
+              <Badge className="bg-green-500 text-white flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                Stock: {reward.stock}
+              </Badge>
+            ) : (
+              <Badge className="bg-red-500 text-white flex items-center gap-1">
+                <Package className="w-3 h-3" />
+                Sin stock
+              </Badge>
+            )}
+          </div>
         </div>
+        
         <div className="p-4 space-y-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-gray-500">{reward.brand}</span>
+              <span className="text-gray-500 dark:text-white">{reward.brand}</span>
             </div>
-            <h3 className="text-gray-900">{reward.name}</h3>
+            <h3 className="text-gray-900 dark:">{reward.name}</h3>
             <p className="text-gray-500 line-clamp-2">{reward.description}</p>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t">
             <div className="flex items-center gap-1">
               <Leaf className="w-4 h-4 text-emerald-600" />
-              <span className="text-gray-900">{reward.points}</span>
-              <span className="text-gray-500">pts</span>
+              <span className="text-gray-900 dark:text-white">{reward.points}</span>
+              <span className="text-gray-500 dark:text-gray-400">pts</span>
             </div>
+            
+            {/* ✅ BOTÓN CON ESTADO DE STOCK */}
             <Button
               size="sm"
               onClick={() => handleRedeemClick(reward)}
-              disabled={!canAfford}
-              className={canAfford ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+              disabled={!canRedeem}
+              className={
+                canRedeem ? 'bg-emerald-600 hover:bg-emerald-700' :
+                !hasStock ? 'bg-black cursor-not-allowed dark:bg-gray-800 text-white' :
+                'bg-amber-500 hover:bg-amber-600 dark:bg-red-600 text-white'
+              }
             >
-              {canAfford ? 'Canjear' : 'Insuficiente'}
+              {canRedeem ? 'Canjear' : 
+               !hasStock ? 'Sin stock' : 
+               'CANJEAR'}
             </Button>
           </div>
 
@@ -243,14 +329,11 @@ export function Rewards({ onRedeem }: RewardsProps) {
     );
   };
 
-  // --- JSX de Renderizado ---
-
   return (
     <div className="p-6 space-y-6 pb-24">
-
       {/* Header */}
       <div>
-        <h1 className="text-gray-900 mb-2 dark:text-white ">Premios</h1>
+        <h1 className="text-gray-900 mb-2 dark:text-white">Premios</h1>
         <p className="text-black dark:text-white/80">
           Canjea tus ecopoints por premios increíbles
         </p>
@@ -335,7 +418,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
         )}
       </Tabs>
 
-      {/* Dialogo de Confirmación (Se mantiene igual) */}
+      {/* Dialogo de Confirmación CON INFORMACIÓN DE STOCK */}
       <Dialog open={!!selectedReward} onOpenChange={(open: boolean) => !open && setSelectedReward(null)}>
         <DialogContent>
           <DialogHeader>
@@ -359,6 +442,18 @@ export function Rewards({ onRedeem }: RewardsProps) {
                 <h3 className="text-gray-900">{selectedReward.name}</h3>
                 <p className="text-gray-600 mt-2">{selectedReward.description}</p>
               </div>
+              
+              {/* ✅ INFORMACIÓN DE STOCK EN EL DIÁLOGO */}
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <span className="text-gray-700 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Stock disponible:
+                </span>
+                <Badge className={selectedReward.stock > 0 ? 'bg-green-500' : 'bg-red-500'}>
+                  {selectedReward.stock > 0 ? `${selectedReward.stock} unidades` : 'Sin stock'}
+                </Badge>
+              </div>
+              
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-gray-700">Costo:</span>
                 <div className="flex items-center gap-1">
@@ -379,15 +474,16 @@ export function Rewards({ onRedeem }: RewardsProps) {
             </Button>
             <Button
               className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={confirmRedeem} // Llama a confirmRedeem -> registrarCanje
+              onClick={confirmRedeem}
+              disabled={selectedReward?.stock === 0}
             >
-              Confirmar canje
+              {selectedReward?.stock === 0 ? 'Sin stock' : 'Confirmar canje'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Dialogo de Éxito Corregido para mostrar el código de canje */}
+      {/* Dialogo de Éxito MEJORADO */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -416,15 +512,26 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
                 {redeemedReward.codigo_entrega && (
                   <div className="bg-white p-3 rounded-lg mt-2 shadow-inner border border-gray-100">
-                    <p className="text-sm text-gray-500">Tu código de canje:</p>
-                    <p className="text-xl font-mono text-emerald-700 break-words font-bold">
+                    <p className="text-sm text-gray-500 mb-2">Tu código de canje:</p>
+                    <p className="text-xl font-mono text-emerald-700 break-words font-bold bg-gray-50 p-2 rounded border">
                       {redeemedReward.codigo_entrega}
                     </p>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="mt-3 w-full"
+                      onClick={() => {
+                        navigator.clipboard.writeText(redeemedReward.codigo_entrega || '');
+                        toast.success('Código copiado al portapapeles');
+                      }}
+                    >
+                      📋 Copiar código
+                    </Button>
                   </div>
                 )}
 
                 <p className="text-emerald-700 mt-3 text-sm">
-                  ¡Guarda este código! Es único y personal.
+                  ✅ Presenta este código en el establecimiento para reclamar tu premio
                 </p>
               </Card>
             )}
