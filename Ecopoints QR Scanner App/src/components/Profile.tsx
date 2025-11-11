@@ -2,9 +2,6 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Switch } from './ui/switch';
 import { useEffect, useState } from "react";
 import {
   User,
@@ -101,7 +98,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
   // --- Cálculos CORREGIDOS ---
   const escaneos = transactions.filter(t => t.type === 'scan');
   const totalScans = escaneos.length;
-  
+
   // Definir los niveles y sus requisitos de escaneos
   const niveles = [
     { nivel: 1, escaneosRequeridos: 0, nombre: "Eco Novice" },
@@ -128,18 +125,18 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
   // Calcular el siguiente nivel y escaneos faltantes
   const siguienteNivel = niveles.find(n => n.nivel === level + 1);
-  const escaneosFaltantes = siguienteNivel 
+  const escaneosFaltantes = siguienteNivel
     ? siguienteNivel.escaneosRequeridos - totalScans
     : 0;
 
   // Calcular progreso para la barra (porcentaje hacia el siguiente nivel)
   const calcularProgreso = () => {
     if (!siguienteNivel) return 100; // Si es el nivel máximo
-    
+
     const nivelAnterior = niveles.find(n => n.nivel === level);
     const escaneosEnEsteNivel = totalScans - (nivelAnterior?.escaneosRequeridos || 0);
     const escaneosNecesariosParaSubir = siguienteNivel.escaneosRequeridos - (nivelAnterior?.escaneosRequeridos || 0);
-    
+
     return (escaneosEnEsteNivel / escaneosNecesariosParaSubir) * 100;
   };
 
@@ -219,9 +216,9 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
             <p className="text-gray-700 dark:text-gray-300">Próximo nivel</p>
             <p className="text-gray-900 dark:text-white">
               {isLoading ? '...' :
-               siguienteNivel
-                 ? `${escaneosFaltantes} escaneo${escaneosFaltantes !== 1 ? 's' : ''} más`
-                 : '¡Nivel máximo alcanzado!'}
+                siguienteNivel
+                  ? `${escaneosFaltantes} escaneo${escaneosFaltantes !== 1 ? 's' : ''} más`
+                  : '¡Nivel máximo alcanzado!'}
             </p>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -240,9 +237,9 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
       {/* Opciones */}
       <div className="space-y-2">
-        
-      <Separator className="my-2" />
-      
+
+        <Separator className="my-2" />
+
         <MenuButton icon={<QrCode className="w-5 h-5" />} label="Puntos de recoleccion" onClick={() => setActiveSection("")} />
         <MenuButton icon={<Settings className="w-5 h-5" />} label="Configuración" onClick={() => setActiveSection("configuracion")} />
         <MenuButton icon={<Bell className="w-5 h-5" />} label="Notificaciones" onClick={() => setActiveSection("notificaciones")} />

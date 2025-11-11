@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // ✅ Importar useEffect
+import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -9,182 +9,188 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
+// Definición de la interfaz Reward, incluyendo campos opcionales para el canje.
 export interface Reward {
   id: string;
   name: string;
   brand: string;
   description: string;
   points: number;
-  category: 'restaurant' | 'cafe' | 'retail' | 'entertainment';
+  category: 'restaurant' | 'cafe' | 'retail' | 'entertainment' | string;
   image: string;
   discount?: string;
   validity?: string;
+  // Campos agregados temporalmente para el diálogo de éxito
+  codigo_entrega?: string;
 }
 
 interface RewardsProps {
-  balance: number;
+  balance: number; // Mantenido por si se usa fuera del componente, aunque 'botellas' lo reemplaza
   onRedeem: (reward: Reward) => void;
 }
 
-const rewards: Reward[] = [
-  // ... (Tu lista de premios se mantiene igual)
-  {
-    id: '1',
-    name: 'Descuento S/20 en tu compra',
-    brand: 'Bembos',
-    description: 'Vale de descuento de S/20 en cualquier combo. Válido en todas las tiendas.',
-    points: 500,
-    category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1688246780164-00c01647e78c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXJnZXIlMjBmb29kfGVufDF8fHx8MTc2MTU0NDUwMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: '20% OFF',
-    validity: '30 días'
-  },
-  {
-    id: '2',
-    name: 'Pizza Familiar Gratis',
-    brand: "Papa John's",
-    description: 'Pizza familiar de cualquier sabor al llevar una pizza grande.',
-    points: 800,
-    category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1681567604770-0dc826c870ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaXp6YSUyMGZvb2R8ZW58MXx8fHwxNzYxNTg1NTY1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: '2x1',
-    validity: '30 días'
-  },
-  {
-    id: '3',
-    name: 'Combo Clásico',
-    brand: 'KFC',
-    description: '3 piezas de pollo + papas regulares + gaseosa mediana.',
-    points: 600,
-    category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxmcmllZCUyMGNoaWNrZW58ZW58MXx8fHwxNzYxNTYzNTYzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: 'Gratis',
-    validity: '15 días'
-  },
-  {
-    id: '4',
-    name: 'Bebida Grande Gratis',
-    brand: 'Starbucks',
-    description: 'Cualquier bebida grande de tu elección. Incluye personalizaciones.',
-    points: 400,
-    category: 'cafe',
-    image: 'https://images.unsplash.com/photo-1533776992670-a72f4c28235e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBjdXB8ZW58MXx8fHwxNzYxNjAzNDIzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: 'Gratis',
-    validity: '30 días'
-  },
-  {
-    id: '5',
-    name: 'Postre de Helado',
-    brand: 'Bembos',
-    description: 'Helado mediano de cualquier sabor con topping.',
-    points: 250,
-    category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxpY2UlMjBjcmVhbXxlbnwxfHx8fDE3NjE1NTM2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: 'Gratis',
-    validity: '15 días'
-  },
-  {
-    id: '6',
-    name: 'Vale de Descuento S/30',
-    brand: 'Tiendas Retail',
-    description: 'Vale de S/30 en compras mayores a S/100 en tiendas participantes.',
-    points: 350,
-    category: 'retail',
-    image: 'https://images.unsplash.com/photo-1526178613552-2b45c6c302f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaG9wcGluZyUyMGRpc2NvdW50fGVufDF8fHx8MTc2MTYyOTAxM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: 'S/30',
-    validity: '60 días'
-  },
-  {
-    id: '7',
-    name: 'Combo Premium',
-    brand: 'Bembos',
-    description: 'Hamburguesa premium + papas grandes + bebida grande + postre.',
-    points: 700,
-    category: 'restaurant',
-    image: 'https://images.unsplash.com/photo-1688246780164-00c01647e78c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxidXJnZXIlMjBmb29kfGVufDF8fHx8MTc2MTU0NDUwMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: '30% OFF',
-    validity: '30 días'
-  },
-  {
-    id: '8',
-    name: 'Café + Pastel',
-    brand: 'Starbucks',
-    description: 'Café mediano de tu elección + pastel del día.',
-    points: 300,
-    category: 'cafe',
-    image: 'https://images.unsplash.com/photo-1533776992670-a72f4c28235e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBjdXB8ZW58MXx8fHwxNzYxNjAzNDIzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    discount: '25% OFF',
-    validity: '30 días'
-  }
-];
+export function Rewards({ onRedeem }: RewardsProps) {
+  //  1. CONFIGURACIÓN DE ENDPOINTS
+  const API_BASE_URL = "https://ecopoints.hvd.lat/";
+  const LISTAR_CONVENIOS_ENDPOINT = "listarConvenios";
+  const REGISTRAR_CANJE_ENDPOINT = "canjearPuntos";
+  const OBTENER_PUNTOS_ENDPOINT = "obtenerPuntos";
 
-export function Rewards({ balance, onRedeem }: RewardsProps) {
-  const API_URL = "https://ecopoints.hvd.lat/api/";
   const idusuario = localStorage.getItem("usuario_id");
+
+  // 2. ESTADOS
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [loadingRewards, setLoadingRewards] = useState(true);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redeemedReward, setRedeemedReward] = useState<Reward | null>(null);
-  const [botellas, setBotellas] = useState("");
+  const [botellas, setBotellas] = useState("0"); // Puntos del usuario (como string)
 
-  const handleRedeemClick = (reward: Reward) => {
-    // Asegurarse de que 'botellas' es un número para la comparación.
-    const currentPoints = parseFloat(botellas) || 0;
-    if (currentPoints >= reward.points) { // ✅ Usar currentPoints
-      setSelectedReward(reward);
-    } else {
-      toast.error('No tienes suficientes ecopoints');
+  // --- Funciones de Llamada a la API ---
+
+  // Función para obtener los puntos del usuario
+  const obtenerPuntos = async () => {
+    if (!idusuario) return;
+    try {
+      // URL: https://ecopoints.hvd.lat/obtenerPuntos?usuario_id=...
+      const response = await fetch(`${API_BASE_URL}${OBTENER_PUNTOS_ENDPOINT}?usuario_id=${idusuario}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setBotellas(data.puntos ? data.puntos.toString() : "0");
+    } catch (error) {
+      console.error("Error al obtener puntos:", error);
+      setBotellas("0");
     }
   };
 
-  const obtenerPuntos = async (idusuario: string) => {
+  // ✅ Función para obtener la lista de convenios
+  const listarConvenios = async () => {
+    setLoadingRewards(true);
     try {
-      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`, {
-        method: "GET",
-      });
+      // URL: https://ecopoints.hvd.lat/listarConvenios
+      const response = await fetch(`${API_BASE_URL}${LISTAR_CONVENIOS_ENDPOINT}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      setBotellas(data.puntos);
+
+      // Mapeo basado en las columnas de tu tabla 'convenios'
+      const mappedRewards: Reward[] = data.map((item: any) => ({
+        id: item.id.toString(),
+        name: item.titulo || 'Convenio sin título',
+        brand: item.empresa_id ? `Empresa ID: ${item.empresa_id}` : 'Marca Desconocida',
+        description: item.descripcion || 'Sin descripción',
+        points: parseInt(item.puntos_requeridos) || 0,
+
+        // Asume que 'categoria', 'url_imagen', 'descuento' y 'vigencia' 
+        // son retornados por el script PHP que genera el JSON.
+        category: item.categoria || 'other',
+        image: item.url_imagen || 'https://images.unsplash.com/photo-1542831371-29b0f74f9d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1lYWx8ZW58MXx8fHwxNzYzMTk2NzU5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+        discount: item.descuento || undefined,
+        validity: item.vigencia || undefined,
+      }));
+
+      setRewards(mappedRewards);
     } catch (error) {
-      console.error("Error al obtener puntos:", error);
+      console.error("Error al obtener convenios:", error);
+      toast.error('No se pudieron cargar los premios.');
+      setRewards([]);
+    } finally {
+      setLoadingRewards(false);
     }
   };
 
-  // ✅ CORRECCIÓN: Usar useEffect para llamadas asíncronas al montar el componente
-  useEffect(() => {
-    if (idusuario) {
-      obtenerPuntos(idusuario);
+
+  // ✅ Función para registrar el canje
+  const registrarCanje = async (reward: Reward) => {
+    if (!idusuario) {
+      toast.error("Error: Sesión de usuario no encontrada.");
+      return;
     }
-  }, [idusuario]);
 
-  // Se eliminó la línea `obtenerPuntos(idusuario!) as unknown as number;`
+    // Cerramos el diálogo de confirmación mientras se procesa la solicitud
+    setSelectedReward(null);
 
-  const confirmRedeem = () => {
-    if (selectedReward) {
-      onRedeem(selectedReward);
-      setRedeemedReward(selectedReward);
-      setSelectedReward(null);
+    try {
+      // URL: https://ecopoints.hvd.lat/canjearPuntos (POST)
+      const response = await fetch(`${API_BASE_URL}${REGISTRAR_CANJE_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuario_id: idusuario,
+          convenio_id: reward.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      // Manejo de errores basado en tu PHP (status 400 o propiedad 'error')
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Fallo desconocido al registrar el canje.');
+      }
+
+      // Canje Exitoso
+      onRedeem(reward);
+
+      setRedeemedReward({
+        ...reward,
+        codigo_entrega: data.codigo_entrega,
+      });
+
       setShowSuccess(true);
+
+      obtenerPuntos();
+      listarConvenios();
 
       setTimeout(() => {
         setShowSuccess(false);
         setRedeemedReward(null);
-      }, 3000);
+      }, 5000);
+
+    } catch (error: any) {
+      console.error("Error al registrar el canje:", error);
+      toast.error(error.message || 'Error de conexión. Inténtalo más tarde.');
+      // Si hay error, permitimos que el usuario lo intente de nuevo
+      setSelectedReward(reward);
+    }
+  };
+  useEffect(() => {
+    listarConvenios();
+    if (idusuario) {
+      obtenerPuntos();
+    }
+  }, [idusuario]);
+
+  // --- Lógica y Handlers ---
+
+  const handleRedeemClick = (reward: Reward) => {
+    const currentPoints = parseFloat(botellas) || 0;
+    if (currentPoints >= reward.points) {
+      setSelectedReward(reward);
+    } else {
+      toast.error('No tienes suficientes ecopoints');
     }
   };
 
-  const categoryLabels = {
-    restaurant: 'Restaurantes',
-    cafe: 'Cafeterías',
-    retail: 'Retail',
-    entertainment: 'Entretenimiento'
+  const confirmRedeem = () => {
+    if (selectedReward) {
+      // Llama a la función de registro real en la API
+      registrarCanje(selectedReward);
+    }
   };
 
+  const filterRewardsByCategory = (category?: string) => {
+    if (!category || category === 'all') return rewards;
+    return rewards.filter(r => r.category.toLowerCase() === category.toLowerCase());
+  };
+
+  // --- Componente RewardCard (sin cambios funcionales) ---
+
   const RewardCard = ({ reward }: { reward: Reward }) => {
-    // Usar los puntos de `botellas` para la verificación
     const currentPoints = parseFloat(botellas) || 0;
     const canAfford = currentPoints >= reward.points;
 
@@ -237,19 +243,15 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
     );
   };
 
-  // ... (Resto de la función filterRewardsByCategory) ...
-  const filterRewardsByCategory = (category?: string) => {
-    if (!category || category === 'all') return rewards;
-    return rewards.filter(r => r.category === category);
-  };
-
+  // --- JSX de Renderizado ---
 
   return (
     <div className="p-6 space-y-6 pb-24">
+
       {/* Header */}
       <div>
-        <h1 className="text-gray-900 mb-2">Premios</h1>
-        <p className="text-gray-500">
+        <h1 className="text-gray-900 mb-2 dark:text-white ">Premios</h1>
+        <p className="text-black dark:text-white/80">
           Canjea tus ecopoints por premios increíbles
         </p>
       </div>
@@ -260,10 +262,10 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
           <div>
             <p className="text-emerald-100 mb-1">Tus ecopoints</p>
             <div className="flex items-baseline gap-2">
-              {botellas
+              {botellas !== "0"
                 ? (
                   <>
-                    <span className="text-3xl font-semibold">{botellas.toLocaleString()}</span>
+                    <span className="text-3xl font-semibold">{parseFloat(botellas).toLocaleString()}</span>
                     <span className="text-emerald-100">puntos</span>
                   </>
                 )
@@ -272,7 +274,6 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
                 )
               }
             </div>
-
           </div>
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
             <Gift className="w-8 h-8" />
@@ -280,7 +281,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
         </div>
       </Card>
 
-      {/* Tabs */}
+      {/* Tabs y Contenido */}
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="all">Todos</TabsTrigger>
@@ -289,40 +290,52 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
           <TabsTrigger value="retail">Retail</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 gap-4">
-            {filterRewardsByCategory('all').map(reward => (
-              <RewardCard key={reward.id} reward={reward} />
-            ))}
-          </div>
-        </TabsContent>
+        {loadingRewards ? (
+          <div className="text-center p-8 text-gray-500 italic">Cargando premios...</div>
+        ) : rewards.length === 0 ? (
+          <div className="text-center p-8 text-gray-500 italic">No se encontraron premios disponibles.</div>
+        ) : (
+          <>
+            {/* Contenido para 'Todos' */}
+            <TabsContent value="all" className="mt-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filterRewardsByCategory('all').map(reward => (
+                  <RewardCard key={reward.id} reward={reward} />
+                ))}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="restaurant" className="mt-6">
-          <div className="grid grid-cols-1 gap-4">
-            {filterRewardsByCategory('restaurant').map(reward => (
-              <RewardCard key={reward.id} reward={reward} />
-            ))}
-          </div>
-        </TabsContent>
+            {/* Contenido para 'restaurant' */}
+            <TabsContent value="restaurant" className="mt-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filterRewardsByCategory('restaurant').map(reward => (
+                  <RewardCard key={reward.id} reward={reward} />
+                ))}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="cafe" className="mt-6">
-          <div className="grid grid-cols-1 gap-4">
-            {filterRewardsByCategory('cafe').map(reward => (
-              <RewardCard key={reward.id} reward={reward} />
-            ))}
-          </div>
-        </TabsContent>
+            {/* Contenido para 'cafe' */}
+            <TabsContent value="cafe" className="mt-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filterRewardsByCategory('cafe').map(reward => (
+                  <RewardCard key={reward.id} reward={reward} />
+                ))}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="retail" className="mt-6">
-          <div className="grid grid-cols-1 gap-4">
-            {filterRewardsByCategory('retail').map(reward => (
-              <RewardCard key={reward.id} reward={reward} />
-            ))}
-          </div>
-        </TabsContent>
+            {/* Contenido para 'retail' */}
+            <TabsContent value="retail" className="mt-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filterRewardsByCategory('retail').map(reward => (
+                  <RewardCard key={reward.id} reward={reward} />
+                ))}
+              </div>
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
-      {/* Confirmation Dialog */}
+      {/* Dialogo de Confirmación (Se mantiene igual) */}
       <Dialog open={!!selectedReward} onOpenChange={(open: boolean) => !open && setSelectedReward(null)}>
         <DialogContent>
           <DialogHeader>
@@ -366,7 +379,7 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
             </Button>
             <Button
               className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={confirmRedeem}
+              onClick={confirmRedeem} // Llama a confirmRedeem -> registrarCanje
             >
               Confirmar canje
             </Button>
@@ -374,10 +387,10 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Success Dialog */}
+      {/* ✅ Dialogo de Éxito Corregido para mostrar el código de canje */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader> {/* ✅ CORRECCIÓN: Agregar DialogHeader y DialogTitle para A11y */}
+          <DialogHeader>
             <DialogTitle>Canje Exitoso</DialogTitle>
           </DialogHeader>
           <div className="text-center space-y-4 py-6">
@@ -396,12 +409,22 @@ export function Rewards({ balance, onRedeem }: RewardsProps) {
               </p>
             </div>
             {redeemedReward && (
-              <Card className="p-4 bg-emerald-50">
-                <p className="text-emerald-900">
+              <Card className="p-4 bg-emerald-50 border border-emerald-200">
+                <p className="text-emerald-900 font-semibold mb-1">
                   {redeemedReward.brand} - {redeemedReward.name}
                 </p>
-                <p className="text-emerald-700 mt-1">
-                  Revisa tu historial para ver el código de canje
+
+                {redeemedReward.codigo_entrega && (
+                  <div className="bg-white p-3 rounded-lg mt-2 shadow-inner border border-gray-100">
+                    <p className="text-sm text-gray-500">Tu código de canje:</p>
+                    <p className="text-xl font-mono text-emerald-700 break-words font-bold">
+                      {redeemedReward.codigo_entrega}
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-emerald-700 mt-3 text-sm">
+                  ¡Guarda este código! Es único y personal.
                 </p>
               </Card>
             )}
