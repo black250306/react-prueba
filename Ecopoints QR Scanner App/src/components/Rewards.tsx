@@ -69,8 +69,8 @@ export function Rewards({ onRedeem }: RewardsProps) {
       return 'cafe';
     }
     
-    if (empresaLower.includes('retail') || 
-        empresaLower.includes('tienda') || 
+    if (empresaLower.includes('retail') ||
+        empresaLower.includes('tienda') ||
         empresaLower.includes('super') ||
         empresaLower.includes('market') ||
         empresaLower.includes('ropa') ||
@@ -81,8 +81,8 @@ export function Rewards({ onRedeem }: RewardsProps) {
       return 'retail';
     }
     
-    if (empresaLower.includes('cine') || 
-        empresaLower.includes('movie') || 
+    if (empresaLower.includes('cine') ||
+        empresaLower.includes('movie') ||
         empresaLower.includes('teatro') ||
         empresaLower.includes('entertainment') ||
         empresaLower.includes('diversion') ||
@@ -93,7 +93,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
     return 'other';
   };
 
-  // ✅ Función para obtener la lista de convenios CON STOCK
+  // Función para obtener la lista de convenios CON STOCK
   const listarConvenios = async () => {
     setLoadingRewards(true);
     try {
@@ -116,7 +116,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
         category: mapCategory(item.empresa),
         image: item.imagen_url || item.logo_url || 'https://images.unsplash.com/photo-1542831371-29b0f74f9d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1lYWx8ZW58MXx8fHwxNzYzMTk2NzU5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         validity: item.vigencia || "30 días",
-        stock: parseInt(item.stock) || 0, // ✅ Incluir stock del JSON
+        stock: parseInt(item.stock) || 0, // Incluir stock del JSON
       }));
 
       setRewards(mappedRewards);
@@ -293,7 +293,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-gray-500 dark:text-white">{reward.brand}</span>
             </div>
-            <h3 className="text-gray-900 dark:">{reward.name}</h3>
+            <h3 className="text-gray-900 dark:text-blue-700">{reward.name}</h3>
             <p className="text-gray-500 line-clamp-2">{reward.description}</p>
           </div>
 

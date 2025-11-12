@@ -202,10 +202,10 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
       {/* Estadísticas */}
       <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <Stat icon={<Leaf className="w-6 h-6 text-emerald-600" />} label="Puntos" value={botellas ?? '...'} />
-          <Stat icon={<TrendingUp className="w-6 h-6 text-blue-600" />} label="Escaneos" value={isLoading ? '...' : totalScans} />
-          <Stat icon={<Award className="w-6 h-6 text-purple-600" />} label="Nivel" value={level} />
+        <div className="grid grid-cols-3 gap-4 text-center dark:bg-gray-800">
+          <Stat icon={<Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400 " />} label="Puntos" value={botellas ?? '...'}type="puntos" />
+          <Stat icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />} label="Escaneos" value={isLoading ? '...' : totalScans}type="escaneos"  />
+          <Stat icon={<Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />} label="Nivel" value={level}type="nivel"  />
         </div>
       </Card>
 
@@ -261,10 +261,22 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 // SUBCOMPONENTES (solo los que usa Profile)
 // -------------------------------------------------------
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: any }) {
+function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: string; value: any; type: string }) {
+  
+  const typeColorMap: { [key: string]: string } = {
+    'puntos': 'bg-emerald-100 dark:bg-emerald-900 ',
+    'escaneos': 'bg-blue-100 dark:bg-blue-900',
+    'nivel': 'bg-purple-100 dark:bg-purple-900',
+    'info': 'bg-blue-100 dark:bg-blue-900', 
+  };
+
+  const colorClasses = typeColorMap[type] || typeColorMap['info'];
+  
+  const iconClasses = `w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${colorClasses}`;
+
   return (
     <div>
-      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-2">
+      <div className={iconClasses}> 
         {icon}
       </div>
       <p className="text-gray-900 dark:text-white">{value}</p>

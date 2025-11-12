@@ -265,9 +265,9 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
                 </Card>
             </div>
 
-            <Card className="p-4 bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800">
+            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
                 <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-card-notas dark:text-card-notas mt-0.5" />
                     <div>
                         <p className="text-emerald-700 dark:text-emerald-300">
                             Las notificaciones te ayudan a mantener tus hábitos de reciclaje y no perderte ninguna recompensa.
@@ -608,7 +608,7 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                     </Button>
                     <Button
                         variant="outline"
-                        className="w-full justify-between text-red-600 dark:text-red-400 dark:bg-gray-700 dark:border-gray-600"
+                        className="w-full justify-between text-red-600 dark:text-red-600 dark:bg-gray-700 dark:border-gray-600"
                         onClick={() => toast.error('Para eliminar tu cuenta, contacta a soporte')}
                     >
                         <div className="flex items-center gap-3">
@@ -620,11 +620,11 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 </Card>
             </div>
 
-            <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
                 <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <Shield className="w-5 h-5 text-card-notas dark:text-card-notas mt-0.5" />
                     <div>
-                        <p className="text-blue-700 dark:text-blue-300">
+                        <p className="text-emerald-700 dark:text-emerald-300">
                             Tu privacidad es importante. Protegemos tus datos con encriptación de grado bancario.
                         </p>
                     </div>
