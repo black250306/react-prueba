@@ -99,14 +99,16 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       
       const data = await response.json();
       
-      const transaccionesAdaptadas: Transaction[] = data.map((item: any) => ({
-        id: item.id?.toString() || Math.random().toString(),
-        type: item.tipo === "canje" ? "redeem" : "scan",
-        description: item.descripcion || "Transacción",
-        location: item.ubicacion || "EcoPoints",
-        points: item.puntos || 0,
-        date: item.fecha || new Date().toISOString()
-      }));
+      const transaccionesAdaptadas: Transaction[] = data
+        .filter((item: any) => item.type === "scan")
+        .map((item: any) => ({
+          id: item.id?.toString() || Math.random().toString(),
+          type: "scan",
+          description: item.descripcion || "Escaneo QR",
+          location: item.ubicacion || "EcoPoints",
+          points: item.puntos || 0,
+          date: item.fecha || new Date().toISOString()
+        }));
       
       setTransactions(transaccionesAdaptadas);
     } catch (error) {
