@@ -18,7 +18,6 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
-// Importa los componentes de las secciones
 import {
   Configuracion,
   Notificaciones,
@@ -26,7 +25,6 @@ import {
   AyudaSoporte
 } from './ProfileSections';
 
-// --- Tipos ---
 type Transaction = {
   id: string;
   type: "scan" | "redeem";
@@ -43,10 +41,6 @@ interface ProfileProps {
   onToggleTheme?: () => void;
 }
 
-// -------------------------------------------------------
-// COMPONENTE PRINCIPAL
-// -------------------------------------------------------
-
 export function Profile({ onViewStation, onLogout, theme = 'light', onToggleTheme }: ProfileProps) {
   const API_BASE = window.location.hostname === 'localhost' 
     ? '/api' 
@@ -60,13 +54,11 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Headers con autorización
   const getAuthHeaders = () => ({
     "Content-Type": "application/json",
     "Authorization": `Bearer ${token}`
   });
 
-  // --- Obtener puntos ---
   const obtenerPuntos = async () => {
     if (!idusuario || !token) return;
     
@@ -77,7 +69,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       
       if (!response.ok) {
         if (response.status === 401) {
-          console.error("Token expirado en obtenerPuntos");
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -86,12 +77,10 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       const data = await response.json();
       setBotellas(Number(data.puntos) || 0);
     } catch (error) {
-      console.error("Error al obtener puntos:", error);
       setBotellas(0);
     }
   };
 
-  // --- Obtener historial ---
   const obtenerHistorial = async () => {
     if (!idusuario || !token) return;
     
@@ -103,16 +92,13 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       
       if (!response.ok) {
         if (response.status === 401) {
-          console.error("Token expirado en obtenerHistorial");
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log("Historial recibido:", data);
       
-      // Adaptar la respuesta de la API a tu interfaz Transaction
       const transaccionesAdaptadas: Transaction[] = data.map((item: any) => ({
         id: item.id?.toString() || Math.random().toString(),
         type: item.tipo === "canje" ? "redeem" : "scan",
@@ -124,14 +110,12 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       
       setTransactions(transaccionesAdaptadas);
     } catch (error) {
-      console.error("Error al obtener historial:", error);
       setTransactions([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Obtener historial de canjes
   const obtenerHistorialCanjes = async () => {
     if (!idusuario || !token) return;
     
@@ -142,9 +126,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       
       if (response.ok) {
         const data = await response.json();
-        console.log("Historial de canjes:", data);
         
-        // Combinar canjes con el historial normal
         if (Array.isArray(data) && data.length > 0) {
           const canjesAdaptados: Transaction[] = data.map((canje: any) => ({
             id: `canje-${canje.id}`,
@@ -159,7 +141,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         }
       }
     } catch (error) {
-      console.error("Error al obtener historial de canjes:", error);
     }
   };
 
@@ -180,11 +161,9 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     cargarDatos();
   }, [idusuario, token]);
 
-  // --- Cálculos CORREGIDOS ---
   const escaneos = transactions.filter(t => t.type === 'scan');
   const totalScans = escaneos.length;
 
-  // Definir los niveles y sus requisitos de escaneos
   const niveles = [
     { nivel: 1, escaneosRequeridos: 0, nombre: "Eco Novice" },
     { nivel: 2, escaneosRequeridos: 10, nombre: "Eco Warrior" },
@@ -195,7 +174,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     { nivel: 7, escaneosRequeridos: 5000, nombre: "Eco Guardian" }
   ];
 
-  // Calcular el nivel actual
   const calcularNivel = (escaneos: number) => {
     for (let i = niveles.length - 1; i >= 0; i--) {
       if (escaneos >= niveles[i].escaneosRequeridos) {
@@ -208,15 +186,13 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
   const nivelActual = calcularNivel(totalScans);
   const level = nivelActual.nivel;
 
-  // Calcular el siguiente nivel y escaneos faltantes
   const siguienteNivel = niveles.find(n => n.nivel === level + 1);
   const escaneosFaltantes = siguienteNivel
     ? siguienteNivel.escaneosRequeridos - totalScans
     : 0;
 
-  // Calcular progreso para la barra (porcentaje hacia el siguiente nivel)
   const calcularProgreso = () => {
-    if (!siguienteNivel) return 100; // Si es el nivel máximo
+    if (!siguienteNivel) return 100;
 
     const nivelAnterior = niveles.find(n => n.nivel === level);
     const escaneosEnEsteNivel = totalScans - (nivelAnterior?.escaneosRequeridos || 0);
@@ -231,7 +207,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     return `Nivel ${level} - ${nivelActual.nombre}`;
   };
 
-  // --- Subpantallas usando los componentes importados ---
   if (activeSection === "configuracion") {
     return (
       <Configuracion
@@ -266,7 +241,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     );
   }
 
-  // --- Pantalla principal ---
   return (
     <div className="p-6 space-y-6">
       <div className="text-center">
@@ -285,7 +259,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         </Badge>
       </div>
 
-      {/* Estadísticas */}
       <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="grid grid-cols-3 gap-4 text-center dark:bg-gray-800">
           <Stat 
@@ -309,7 +282,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         </div>
       </Card>
 
-      {/* Progreso CORREGIDO */}
       <Card className="p-4 bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950 dark:to-blue-950 dark:border-gray-700">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -335,7 +307,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         </div>
       </Card>
 
-      {/* Opciones */}
       <div className="space-y-2">
         <Separator className="my-2" />
 
@@ -365,7 +336,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
           label="Ayuda y soporte" 
           onClick={() => setActiveSection("ayuda")} 
         />
-        <MenuButtonsa 
+        <MenuButton 
           icon={<LogOut className="w-5 h-5" />} 
           label="Cerrar sesión" 
           className="text-red-600" 
@@ -380,10 +351,6 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     </div>
   );
 }
-
-// -------------------------------------------------------
-// SUBCOMPONENTES (solo los que usa Profile)
-// -------------------------------------------------------
 
 function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: string; value: any; type: string }) {
   
@@ -412,15 +379,6 @@ function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: stri
 function MenuButton({ icon, label, className = '', onClick }: { icon: React.ReactNode; label: string; className?: string; onClick?: () => void }) {
   return (
     <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${className}`} onClick={onClick}>
-      <div className="flex items-center gap-3">{icon}<span>{label}</span></div>
-      <ChevronRight className="w-5 h-5" />
-    </Button>
-  );
-}
-
-function MenuButtonsa({ icon, label, className = '', onClick }: { icon: React.ReactNode; label: string; className?: string; onClick?: () => void }) {
-  return (
-    <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 ${className}`} onClick={onClick}>
       <div className="flex items-center gap-3">{icon}<span>{label}</span></div>
       <ChevronRight className="w-5 h-5" />
     </Button>

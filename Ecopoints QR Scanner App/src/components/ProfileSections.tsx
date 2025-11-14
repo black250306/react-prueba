@@ -54,28 +54,20 @@ interface AyudaSoporteProps {
 }
 
 export function Configuracion({ theme = 'light', onToggleTheme, onClose }: ConfiguracionProps) {
-
-    function setShowSettings(show: boolean): void {
-        if (show === false) {
-            onClose?.();
-        }
-    }
     return (
         <div className="p-6 space-y-6">
-            {/* Header de Configuración */}
             <div className="flex items-center justify-between">
                 <h1 className="text-gray-900 dark:text-white">Configuración</h1>
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowSettings(false)}
+                    onClick={onClose}
                     className="dark:text-white dark:hover:bg-gray-800"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
 
-            {/* Apariencia */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Apariencia</h2>
                 <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
@@ -99,7 +91,6 @@ export function Configuracion({ theme = 'light', onToggleTheme, onClose }: Confi
                 </Card>
             </div>
 
-            {/* Acerca de */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Acerca de</h2>
                 <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
@@ -140,7 +131,6 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
                 </Button>
             </div>
 
-            {/* Notificaciones Push */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Notificaciones Push</h2>
                 <Card className="p-4 space-y-4 dark:bg-gray-800 dark:border-gray-700">
@@ -176,7 +166,6 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
                 </Card>
             </div>
 
-            {/* Tipos de Notificaciones */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Tipos de notificaciones</h2>
                 <Card className="p-4 space-y-4 dark:bg-gray-800 dark:border-gray-700">
@@ -244,7 +233,6 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
                 </Card>
             </div>
 
-            {/* Email */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Correo electrónico</h2>
                 <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
@@ -300,7 +288,6 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
     });
 
     const handlePasswordChange = async () => {
-        // Validaciones
         if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
             toast.error('Todos los campos son obligatorios');
             return;
@@ -324,7 +311,6 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
         setIsLoading(true);
 
         try {
-            // Obtener el usuario_id - AJUSTA ESTO SEGÚN TU SISTEMA
             const usuario_id = localStorage.getItem('usuario_id') || '2';
 
             const requestBody = {
@@ -334,7 +320,7 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
             };
 
             const response = await fetch('https://ecopoints.hvd.lat/api/actualizarContrasena', {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -344,12 +330,10 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
             const data = await response.json();
 
             if (response.ok) {
-                // Éxito
                 toast.success(data.mensaje || 'Contraseña actualizada exitosamente');
                 setShowChangePassword(false);
                 setPasswordData({ current: '', new: '', confirm: '' });
             } else {
-                // Error
                 if (data.error && data.error.includes('incorrecta')) {
                     toast.error('La contraseña actual es incorrecta');
                 } else {
@@ -357,18 +341,11 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 }
             }
         } catch (error) {
-            console.error('Error al cambiar contraseña:', error);
             toast.error('Error de conexión. Intenta nuevamente.');
         } finally {
             setIsLoading(false);
         }
     };
-
-    function setShowPrivacy(show: boolean): void {
-        if (show === false) {
-            onClose?.();
-        }
-    }
 
     return (
         <div className="p-6 space-y-6">
@@ -377,14 +354,13 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowPrivacy(false)}
+                    onClick={onClose}
                     className="dark:text-white dark:hover:bg-gray-800"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
 
-            {/* Seguridad de cuenta */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Seguridad de cuenta</h2>
                 <Card className="p-4 space-y-4 dark:bg-gray-800 dark:border-gray-700">
@@ -520,7 +496,6 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 </Card>
             </div>
 
-            {/* Privacidad de datos */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Privacidad de datos</h2>
                 <Card className="p-4 space-y-4 dark:bg-gray-800 dark:border-gray-700">
@@ -591,7 +566,6 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 </Card>
             </div>
 
-            {/* Gestión de datos */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Gestión de datos</h2>
                 <Card className="p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700">
@@ -635,11 +609,6 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
 }
 
 export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
-    function setShowHelp(show: boolean): void {
-        if (show === false) {
-            onClose?.();
-        }
-    }
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
@@ -647,14 +616,13 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowHelp(false)}
+                    onClick={onClose}
                     className="dark:text-white dark:hover:bg-gray-800"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
 
-            {/* Contacto rápido */}
             <Card className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-center gap-3 mb-3">
                     <HelpCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -665,7 +633,6 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </p>
             </Card>
 
-            {/* Métodos de contacto */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Contacto</h2>
                 <Card className="p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700">
@@ -720,7 +687,6 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </Card>
             </div>
 
-            {/* Preguntas frecuentes */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Preguntas frecuentes</h2>
                 <Card className="p-4 space-y-4 dark:bg-gray-800 dark:border-gray-700">
@@ -754,7 +720,6 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </Card>
             </div>
 
-            {/* Tutoriales */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Tutoriales</h2>
                 <Card className="p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700">
@@ -785,7 +750,6 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </Card>
             </div>
 
-            {/* Reportar problema */}
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Reportar un problema</h2>
                 <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
@@ -802,7 +766,6 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </Card>
             </div>
 
-            {/* Redes sociales */}
             <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
                 <h3 className="text-gray-900 dark:text-white mb-3">Síguenos</h3>
                 <div className="grid grid-cols-2 gap-3">

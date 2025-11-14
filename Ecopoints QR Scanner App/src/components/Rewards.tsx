@@ -35,10 +35,10 @@ interface CanjeResponse {
 }
 
 export function Rewards({ onRedeem }: RewardsProps) {
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? '/api' 
+  const API_BASE = window.location.hostname === 'localhost'
+    ? '/api'
     : 'https://ecopoints.hvd.lat/api';
-  
+
   const idusuario = localStorage.getItem("usuario_id");
   const token = localStorage.getItem("token");
 
@@ -49,64 +49,61 @@ export function Rewards({ onRedeem }: RewardsProps) {
   const [redeemedReward, setRedeemedReward] = useState<Reward | null>(null);
   const [botellas, setBotellas] = useState(0);
 
-  // Headers con autorización
   const getAuthHeaders = () => ({
     "Content-Type": "application/json",
     "Authorization": `Bearer ${token}`
   });
 
-  // Función para mapear empresas a categorías
   const mapCategory = (empresa: string): string => {
     if (!empresa) return 'other';
-    
+
     const empresaLower = empresa.toLowerCase();
-    
-    if (empresaLower.includes('bembos') || 
-        empresaLower.includes('mcdonald') || 
-        empresaLower.includes('burger') ||
-        empresaLower.includes('kfc') ||
-        empresaLower.includes('pizza') ||
-        empresaLower.includes('restaurant') ||
-        empresaLower.includes('comida') ||
-        empresaLower.includes('hamburguesa') ||
-        empresaLower.includes('combo')) {
+
+    if (empresaLower.includes('bembos') ||
+      empresaLower.includes('mcdonald') ||
+      empresaLower.includes('burger') ||
+      empresaLower.includes('kfc') ||
+      empresaLower.includes('pizza') ||
+      empresaLower.includes('restaurant') ||
+      empresaLower.includes('comida') ||
+      empresaLower.includes('hamburguesa') ||
+      empresaLower.includes('combo')) {
       return 'restaurant';
     }
-    
-    if (empresaLower.includes('café') || 
-        empresaLower.includes('cafe') || 
-        empresaLower.includes('starbucks') ||
-        empresaLower.includes('coffee') ||
-        empresaLower.includes('barista') ||
-        empresaLower.includes('tostado')) {
+
+    if (empresaLower.includes('café') ||
+      empresaLower.includes('cafe') ||
+      empresaLower.includes('starbucks') ||
+      empresaLower.includes('coffee') ||
+      empresaLower.includes('barista') ||
+      empresaLower.includes('tostado')) {
       return 'cafe';
     }
-    
+
     if (empresaLower.includes('retail') ||
-        empresaLower.includes('tienda') ||
-        empresaLower.includes('super') ||
-        empresaLower.includes('market') ||
-        empresaLower.includes('ropa') ||
-        empresaLower.includes('zara') ||
-        empresaLower.includes('h&m') ||
-        empresaLower.includes('moda') ||
-        empresaLower.includes('store')) {
+      empresaLower.includes('tienda') ||
+      empresaLower.includes('super') ||
+      empresaLower.includes('market') ||
+      empresaLower.includes('ropa') ||
+      empresaLower.includes('zara') ||
+      empresaLower.includes('h&m') ||
+      empresaLower.includes('moda') ||
+      empresaLower.includes('store')) {
       return 'retail';
     }
-    
+
     if (empresaLower.includes('cine') ||
-        empresaLower.includes('movie') ||
-        empresaLower.includes('teatro') ||
-        empresaLower.includes('entertainment') ||
-        empresaLower.includes('diversion') ||
-        empresaLower.includes('pelicula')) {
+      empresaLower.includes('movie') ||
+      empresaLower.includes('teatro') ||
+      empresaLower.includes('entertainment') ||
+      empresaLower.includes('diversion') ||
+      empresaLower.includes('pelicula')) {
       return 'entertainment';
     }
-    
+
     return 'other';
   };
 
-  // Función para obtener la lista de convenios
   const listarConvenios = async () => {
     setLoadingRewards(true);
     try {
@@ -123,8 +120,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
       }
 
       const data = await response.json();
-      
-      console.log("Datos recibidos de convenios:", data);
 
       const mappedRewards: Reward[] = data.map((item: any) => ({
         id: item.id.toString(),
@@ -140,7 +135,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
       setRewards(mappedRewards);
     } catch (error) {
-      console.error("Error al obtener convenios:", error);
       toast.error('No se pudieron cargar los premios.');
       setRewards([]);
     } finally {
@@ -150,12 +144,12 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
   const obtenerPuntos = async () => {
     if (!idusuario || !token) return;
-    
+
     try {
       const response = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${idusuario}`, {
         headers: getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           toast.error("Sesión expirada. Inicia sesión nuevamente.");
@@ -163,16 +157,14 @@ export function Rewards({ onRedeem }: RewardsProps) {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setBotellas(data.puntos || 0);
     } catch (error) {
-      console.error("Error al obtener puntos:", error);
       setBotellas(0);
     }
   };
 
-  // ✅ FUNCIÓN CORREGIDA - INCLUYE usuario_id EN EL BODY
   const canjearPuntos = async (reward: Reward) => {
     if (!idusuario || !token) {
       toast.error("Error: Sesión de usuario no encontrada.");
@@ -182,27 +174,18 @@ export function Rewards({ onRedeem }: RewardsProps) {
     setSelectedReward(null);
 
     try {
-      console.log("📤 Enviando solicitud de canje:", {
-        usuario_id: parseInt(idusuario),
-        convenio_id: parseInt(reward.id)
-      });
-
       const response = await fetch(`${API_BASE}/canjearPuntos`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          usuario_id: parseInt(idusuario), // ✅ AÑADIDO: usuario_id requerido
+          usuario_id: parseInt(idusuario),
           convenio_id: parseInt(reward.id)
         }),
       });
 
       const data: CanjeResponse = await response.json();
-      
-      console.log("📨 Respuesta del canje:", data);
 
-      // ✅ VERIFICAR SI HAY ERROR EN LA RESPUESTA
       if (!response.ok || data.error) {
-        // Manejar diferentes tipos de errores
         if (data.error && data.error.includes('puntos insuficientes')) {
           throw new Error('No tienes suficientes puntos para este canje.');
         } else if (data.error && data.error.includes('stock')) {
@@ -212,27 +195,22 @@ export function Rewards({ onRedeem }: RewardsProps) {
         }
       }
 
-      // ✅ VERIFICAR SI EL CANJE FUE EXITOSO
       if (data.mensaje && (data.mensaje.includes('éxito') || data.mensaje.includes('exito'))) {
-        // Canje exitoso
         onRedeem(reward);
 
         setRedeemedReward({
           ...reward,
-          codigo_entrega: data.codigo_entrega, // ✅ Usar el código del JSON
+          codigo_entrega: data.codigo_entrega,
         });
 
         setShowSuccess(true);
 
-        // ✅ Actualizar puntos con los puntos restantes del JSON
         if (data.puntos_restantes !== undefined) {
           setBotellas(data.puntos_restantes);
         } else {
-          // Si no vienen puntos restantes, obtenerlos de nuevo
           await obtenerPuntos();
         }
 
-        // Actualizar lista de convenios
         await listarConvenios();
 
         toast.success(data.mensaje || '¡Canje realizado exitosamente!');
@@ -240,14 +218,13 @@ export function Rewards({ onRedeem }: RewardsProps) {
         setTimeout(() => {
           setShowSuccess(false);
           setRedeemedReward(null);
-        }, 15000); // 15 segundos para que el usuario pueda copiar el código
+        }, 15000);
 
       } else {
         throw new Error(data.mensaje || 'Error desconocido al procesar el canje.');
       }
 
     } catch (error: any) {
-      console.error("❌ Error al registrar el canje:", error);
       toast.error(error.message || 'Error de conexión. Inténtalo más tarde.');
     }
   };
@@ -262,7 +239,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
   const handleRedeemClick = (reward: Reward) => {
     const currentPoints = botellas || 0;
     const hasStock = reward.stock > 0;
-    
+
     if (currentPoints >= reward.points && hasStock) {
       setSelectedReward(reward);
     } else if (!hasStock) {
@@ -299,8 +276,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
               className="w-full h-full object-cover"
             />
           </div>
-          
-          {/* BADGE DE STOCK */}
+
           <div className="absolute top-2 left-2">
             {hasStock ? (
               <Badge className="bg-green-500 text-white flex items-center gap-1">
@@ -315,7 +291,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
             )}
           </div>
         </div>
-        
+
         <div className="p-4 space-y-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -331,21 +307,20 @@ export function Rewards({ onRedeem }: RewardsProps) {
               <span className="text-gray-900 dark:text-white">{reward.points}</span>
               <span className="text-gray-500 dark:text-gray-400">pts</span>
             </div>
-            
-            {/* BOTÓN CON ESTADO DE STOCK */}
+
             <Button
               size="sm"
               onClick={() => handleRedeemClick(reward)}
               disabled={!canRedeem}
               className={
                 canRedeem ? 'bg-emerald-600 hover:bg-emerald-700' :
-                !hasStock ? 'bg-gray-400 cursor-not-allowed' :
-                'bg-amber-500 hover:bg-amber-600'
+                  !hasStock ? 'bg-gray-400 cursor-not-allowed' :
+                    'bg-amber-500 hover:bg-amber-600'
               }
             >
-              {canRedeem ? 'Canjear' : 
-               !hasStock ? 'Sin stock' : 
-               'Insuficiente'}
+              {canRedeem ? 'Canjear' :
+                !hasStock ? 'Sin stock' :
+                  'Insuficiente'}
             </Button>
           </div>
 
@@ -359,7 +334,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
   return (
     <div className="p-6 space-y-6 pb-24">
-      {/* Header */}
       <div>
         <h1 className="text-gray-900 mb-2 dark:text-white">Premios</h1>
         <p className="text-black dark:text-white/80">
@@ -367,7 +341,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
         </p>
       </div>
 
-      {/* Balance Card */}
       <Card className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -383,7 +356,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
         </div>
       </Card>
 
-      {/* Tabs y Contenido */}
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="all">Todos</TabsTrigger>
@@ -398,7 +370,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
           <div className="text-center p-8 text-gray-500 italic">No se encontraron premios disponibles.</div>
         ) : (
           <>
-            {/* Contenido para 'Todos' */}
             <TabsContent value="all" className="mt-6">
               <div className="grid grid-cols-1 gap-4">
                 {filterRewardsByCategory('all').map(reward => (
@@ -407,7 +378,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
               </div>
             </TabsContent>
 
-            {/* Contenido para 'restaurant' */}
             <TabsContent value="restaurant" className="mt-6">
               <div className="grid grid-cols-1 gap-4">
                 {filterRewardsByCategory('restaurant').map(reward => (
@@ -416,7 +386,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
               </div>
             </TabsContent>
 
-            {/* Contenido para 'cafe' */}
             <TabsContent value="cafe" className="mt-6">
               <div className="grid grid-cols-1 gap-4">
                 {filterRewardsByCategory('cafe').map(reward => (
@@ -425,7 +394,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
               </div>
             </TabsContent>
 
-            {/* Contenido para 'retail' */}
             <TabsContent value="retail" className="mt-6">
               <div className="grid grid-cols-1 gap-4">
                 {filterRewardsByCategory('retail').map(reward => (
@@ -437,7 +405,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
         )}
       </Tabs>
 
-      {/* Dialogo de Confirmación */}
       <Dialog open={!!selectedReward} onOpenChange={(open: boolean) => !open && setSelectedReward(null)}>
         <DialogContent>
           <DialogHeader>
@@ -461,8 +428,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
                 <h3 className="text-gray-900">{selectedReward.name}</h3>
                 <p className="text-gray-600 mt-2">{selectedReward.description}</p>
               </div>
-              
-              {/* INFORMACIÓN DE STOCK EN EL DIÁLOGO */}
+
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                 <span className="text-gray-700 flex items-center gap-2">
                   <Package className="w-4 h-4" />
@@ -472,7 +438,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
                   {selectedReward.stock > 0 ? `${selectedReward.stock} unidades` : 'Sin stock'}
                 </Badge>
               </div>
-              
+
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-gray-700">Costo:</span>
                 <div className="flex items-center gap-1">
@@ -502,7 +468,6 @@ export function Rewards({ onRedeem }: RewardsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogo de Éxito */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -535,9 +500,9 @@ export function Rewards({ onRedeem }: RewardsProps) {
                     <p className="text-xl font-mono text-emerald-700 break-words font-bold bg-gray-50 p-2 rounded border">
                       {redeemedReward.codigo_entrega}
                     </p>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      size="sm"
+                      variant="outline"
                       className="mt-3 w-full"
                       onClick={() => {
                         navigator.clipboard.writeText(redeemedReward.codigo_entrega || '');
@@ -566,7 +531,3 @@ export function Rewards({ onRedeem }: RewardsProps) {
     </div>
   );
 }
-
-
-
-

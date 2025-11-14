@@ -28,7 +28,6 @@ export function History() {
         const data: Transaction[] = await response.json();
         setTransactions(data);
       } catch (error) {
-        console.error("Error al cargar historial:", error);
       } finally {
         setLoading(false);
       }

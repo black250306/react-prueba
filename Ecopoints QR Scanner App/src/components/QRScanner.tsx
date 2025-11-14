@@ -6,7 +6,6 @@ import { QrCode, X, CheckCircle2, Camera, Minus, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-// Estilos para la barra de zoom
 const sliderStyles = `
   .zoom-slider::-webkit-slider-thumb {
     appearance: none;
@@ -61,17 +60,14 @@ export function QRScanner() {
     try {
       const capabilities = track.getCapabilities();
       const hasZoom = (capabilities as any).zoom !== undefined;
-      console.log('Capacidades de la cámara:', capabilities);
       return hasZoom;
     } catch (error) {
-      console.log('No se pudieron verificar las capacidades de zoom');
       return false;
     }
   };
 
   const applyRealZoom = async (newZoom: number) => {
     if (!videoTrackRef.current || !supportsZoom) {
-      console.log('Zoom no soportado en este dispositivo');
       simulateDigitalZoom(newZoom);
       return;
     }
@@ -82,10 +78,8 @@ export function QRScanner() {
       });
       
       setZoomLevel(newZoom);
-      console.log(`Zoom aplicado: ${newZoom}x`);
       
     } catch (error) {
-      console.error('Error al aplicar zoom:', error);
       simulateDigitalZoom(newZoom);
     }
   };
@@ -172,7 +166,6 @@ export function QRScanner() {
             }
           }
         } catch (error) {
-          console.log('No se pudo obtener el stream de video:', error);
         }
       }, 1000);
 
@@ -181,7 +174,6 @@ export function QRScanner() {
       toast.success("Cámara activa - Enfoca el QR dentro del recuadro");
 
     } catch (err) {
-      console.error("Error al iniciar cámara:", err);
       setHasPermission(false);
       setIsScanning(false);
       scannerRef.current = null;
@@ -201,7 +193,6 @@ export function QRScanner() {
   };
 
   const stopScanning = async () => {
-
     const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
     if (videoElement) {
       videoElement.style.transform = 'none';
@@ -220,7 +211,6 @@ export function QRScanner() {
         await scannerRef.current.clear();
         isScannerRunning.current = false;
       } catch (error) {
-        console.log("Error al detener escáner:", error);
         isScannerRunning.current = false;
       }
     }
@@ -230,8 +220,6 @@ export function QRScanner() {
   };
 
   const handleScanSuccess = async (qrData: string) => {
-    console.log("QR escaneado:", qrData);
-    
     if (!token) {
       toast.error("No estás autenticado. Inicia sesión nuevamente.");
       return;
@@ -248,8 +236,6 @@ export function QRScanner() {
         }),
       });
 
-      console.log("Respuesta del servidor:", response);
-
       if (!response.ok) {
         if (response.status === 401) {
           toast.error("Sesión expirada. Inicia sesión nuevamente.");
@@ -259,7 +245,6 @@ export function QRScanner() {
       }
 
       const data = await response.json();
-      console.log("Datos recibidos:", data);
 
       const puntosGanados = data.puntos_obtenidos || 0;
       setEarnedPoints(puntosGanados);
@@ -268,7 +253,6 @@ export function QRScanner() {
       toast.success(`¡${data.mensaje || "Escaneo exitoso"}! Ganaste ${puntosGanados} ecopoints 🎉`);
 
     } catch (error) {
-      console.error("Error al procesar el QR:", error);
       setEarnedPoints(0);
       toast.error("Error al procesar el código QR. Intenta nuevamente.");
     }
@@ -286,10 +270,8 @@ export function QRScanner() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Agregar estilos */}
       <style>{sliderStyles}</style>
 
-      {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
           <QrCode className="w-8 h-8 text-emerald-600" />
@@ -298,7 +280,6 @@ export function QRScanner() {
         <p className="text-gray-500">Escanea el código QR del punto de reciclaje para ganar ecopoints</p>
       </div>
 
-      {/* Scanner Area */}
       <Card className="overflow-hidden border-2 border-gray-200">
         <div className="relative aspect-square bg-gray-900">
           {!isScanning && !showSuccess && (
@@ -375,7 +356,6 @@ export function QRScanner() {
         </div>
       </Card>
 
-      {/* Barra de Zoom */}
       {isScanning && (
         <Card className="p-4 bg-blue-50 border-blue-200">
           <div className="space-y-3">
@@ -436,7 +416,6 @@ export function QRScanner() {
         </Card>
       )}
 
-      {/* Buttons */}
       <div className="space-y-3">
         {!isScanning ? (
           <Button
@@ -458,7 +437,6 @@ export function QRScanner() {
         )}
       </div>
 
-      {/* Instructions */}
       <Card className="p-4 bg-emerald-50 border-emerald-200">
         <div className="space-y-2">
           <p className="text-emerald-900 font-semibold">Consejos:</p>

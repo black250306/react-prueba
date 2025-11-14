@@ -76,6 +76,7 @@
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   /*colores generales  */
+  --color-red-50: oklch(65.624% 0.20267 24.647);
     --color-red-400: oklch(.704 .191 22.216);
     --color-red-500: oklch(.637 .237 25.331);
     --color-red-600: oklch(.577 .245 27.325);
@@ -135,7 +136,7 @@
     --color-purple-600: oklch(.558 .288 302.321);
     --color-purple-900: oklch(.381 .176 304.987);
     --color-gray-50: oklch(.985 .002 247.839);
-    --color-gray-100: oklch(.967 .003 264.542);
+    --color-gray-100: oklch(83.611% 0.00869 271.317);
     --color-gray-200: oklch(.928 .006 264.531);
     --color-gray-300: oklch(.872 .01 258.338);
     --color-gray-400: oklch(.707 .022 261.325);
@@ -1194,6 +1195,9 @@
   .border-gray-200 {
     border-color: var(--color-gray-200);
   }
+  .border-red-600 {
+    border-color: var(--color-red-600);
+  }
 
   .border-gray-500 {
     border-color: var(--color-gray-500);
@@ -1268,6 +1272,9 @@
   }
   .bg-emerald-200 {
     background-color: var(--color-emerald-200);
+  }
+  .bg-emerald-300 {
+    background-color: var(--color-emerald-300);
   }
   .bg-prueba {
     background-color: var(--color-emerald-200);
@@ -1403,6 +1410,9 @@
 
   .bg-red-500 {
     background-color: var(--color-red-500);
+  }
+  .bg-red-50 {
+    background-color: var(--color-red-50);
   }
 
   .bg-red-600 {
@@ -2460,6 +2470,15 @@
 
   .dark\:border-blue-800:is(.dark *) {
     border-color: var(--color-blue-800);
+  }
+  .dark\:border-red-600:is(.dark *) {
+    border-color: var(--color-red-600);
+  }
+  .dark\:bg-red-50:is(.dark *) {
+    border-color: var(--color-red-50);
+  }
+  .dark\:bg-red-700:is(.dark *) {
+    background-color: var(--color-red-700);
   }
 
   .dark\:border-emerald-800:is(.dark *) {

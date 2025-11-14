@@ -5,7 +5,7 @@ import { Leaf, User, Mail, Lock, Loader2, Eye, EyeOff, ArrowLeft, Key, CheckCirc
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // ← AGREGAR ESTA IMPORTACIÓN
+import { Button } from "@/components/ui/button";
 
 interface LoginProps {
   onLoginSuccess: (usuarioId: string, token: string, usuarioNombre: string) => void;
@@ -44,6 +44,19 @@ interface VerifyCodeResponse {
 
 type ForgotPasswordStep = 'login' | 'request' | 'verify' | 'reset';
 
+// Type guards para verificar el tipo de respuesta
+function isErrorResponse(response: any): response is ErrorResponse {
+  return 'error' in response || (response && typeof response.mensaje === 'string' && !response.token && !response.usuario);
+}
+
+function isLoginResponse(response: any): response is LoginResponse {
+  return 'token' in response && 'usuario' in response;
+}
+
+function isRegisterResponse(response: any): response is RegisterResponse {
+  return 'mensaje' in response && !('token' in response) && !('usuario' in response);
+}
+
 export default function Login({ onLoginSuccess }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -53,8 +66,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
   
-  // Estados para recuperación de contraseña
   const [forgotPasswordStep, setForgotPasswordStep] = useState<ForgotPasswordStep>('login');
   const [resetData, setResetData] = useState({
     email: "",
@@ -78,6 +91,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       ...prev,
       [name]: value
     }));
+    setLoginError("");
   };
 
   const handleResetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,7 +169,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     }
   };
 
-  // Solicitar código de verificación
   const handleRequestReset = async () => {
     if (!validateResetForm('request')) return;
 
@@ -181,14 +194,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       toast.success(data.mensaje || "Código enviado a tu email");
       setResetEmailSent(true);
     } catch (error: any) {
-      console.error("Error al solicitar reset:", error);
       toast.error(error.message || "Error al enviar el código de verificación");
     } finally {
       setLoading(false);
     }
   };
 
-  // Verificar código
   const handleVerifyCode = async () => {
     if (!validateResetForm('verify')) return;
 
@@ -222,14 +233,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       
       setForgotPasswordStep('reset');
     } catch (error: any) {
-      console.error("Error al verificar código:", error);
       toast.error(error.message || "Error al verificar el código");
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar contraseña
   const handleResetPassword = async () => {
     if (!validateResetForm('reset')) return;
 
@@ -255,7 +264,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       const data: ResetResponse = await response.json();
       toast.success(data.mensaje || "Contraseña actualizada exitosamente");
       
-      // Regresar al login
       setForgotPasswordStep('login');
       setResetEmailSent(false);
       setResetData({
@@ -267,7 +275,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         usuarioId: ""
       });
     } catch (error: any) {
-      console.error("Error al actualizar contraseña:", error);
       toast.error(error.message || "Error al actualizar la contraseña");
     } finally {
       setLoading(false);
@@ -280,12 +287,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     if (!validateForm()) return;
 
     setLoading(true);
+    setLoginError("");
 
     const endpoint = isLogin ? "logeoUsuario" : "registrarUsuario";
 
     try {
-      console.log("Enviando petición a:", `${API_BASE}/${endpoint}`);
-      
       const response = await fetch(`${API_BASE}/${endpoint}`, {
         method: "POST",
         headers: { 
@@ -305,20 +311,35 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         ),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`Error ${response.status}: ${errorText}`);
-      }
-
       const data: LoginResponse | RegisterResponse | ErrorResponse = await response.json();
-      console.log("Respuesta recibida:", data);
+
+      if (!response.ok) {
+        // CORRECCIÓN: Usar type guard para verificar si es ErrorResponse
+        let errorMessage = "Error desconocido";
+        
+        if (isErrorResponse(data)) {
+          errorMessage = data.error || data.mensaje || "Error desconocido";
+        } else if (typeof data === 'object' && data !== null) {
+          // Intentar extraer mensaje de error de otras formas
+          const anyData = data as any;
+          errorMessage = anyData.mensaje || anyData.message || "Error desconocido";
+        }
+        
+        if (errorMessage.toLowerCase().includes("incorrect") || 
+            errorMessage.toLowerCase().includes("invalid") ||
+            errorMessage.toLowerCase().includes("credenciales") ||
+            response.status === 401) {
+          setLoginError("Correo electrónico o contraseña incorrectos");
+        } else {
+          throw new Error(errorMessage);
+        }
+        return;
+      }
 
       if (isLogin) {
         const loginData = data as LoginResponse;
         toast.success(loginData.mensaje || "Inicio de sesión exitoso");
         
-        // Guardar en localStorage
         localStorage.setItem("usuario_id", loginData.usuario.id);
         localStorage.setItem("usuario_nombre", loginData.usuario.nombre);
         localStorage.setItem("usuario_correo", loginData.usuario.correo);
@@ -329,16 +350,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         const registerData = data as RegisterResponse;
         toast.success(registerData.mensaje || "Registro exitoso. Ahora inicia sesión.");
         
-        // Cambiar a pestaña de login después del registro exitoso
         setIsLogin(true);
         setFormData(prev => ({ nombre: "", email: prev.email, password: "" }));
       }
     } catch (error: any) {
-      console.error("Error completo:", error);
-      
       if (error.message.includes("Failed to fetch") || error.message.includes("CORS")) {
         toast.error("Error de conexión CORS. Contacta al administrador.");
-      } else {
+      } else if (!loginError) {
         toast.error(error.message || "Error de conexión con el servidor");
       }
     } finally {
@@ -353,6 +371,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const handleTabChange = (login: boolean) => {
     if (loading) return;
     setIsLogin(login);
+    setLoginError("");
     if (login) {
       setFormData(prev => ({ ...prev, nombre: "" }));
     }
@@ -377,7 +396,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     });
   };
 
-  // Renderizar formulario de recuperación de contraseña
   const renderForgotPassword = () => {
     switch (forgotPasswordStep) {
       case 'request':
@@ -430,11 +448,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   </div>
                 </div>
 
-                <motion.button
+                <Button
                   onClick={handleRequestReset}
                   disabled={loading}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+                  type="button"
                 >
                   {loading ? (
                     <>
@@ -447,7 +465,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                       Enviar código de verificación
                     </>
                   )}
-                </motion.button>
+                </Button>
 
                 <div className="mt-4">
                   <Button
@@ -455,6 +473,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     className="w-full text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
                     onClick={backToLogin}
                     disabled={loading}
+                    type="button"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Volver al inicio de sesión
@@ -462,7 +481,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </div>
               </>
             ) : (
-              // INTERFAZ DE CORREO ENVIADO
               <div className="text-center space-y-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 dark:bg-emerald-900 rounded-full">
                   <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
@@ -493,6 +511,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <Button
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
                     onClick={() => setForgotPasswordStep('verify')}
+                    type="button"
                   >
                     <Key className="w-4 h-4 mr-2" />
                     Ingresar código de verificación
@@ -508,6 +527,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     className="w-full"
                     onClick={() => setResetEmailSent(false)}
                     disabled={loading}
+                    type="button"
                   >
                     <Mail className="w-4 h-4 mr-2" />
                     Reenviar código
@@ -519,6 +539,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   className="w-full text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
                   onClick={backToLogin}
                   disabled={loading}
+                  type="button"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Volver al inicio de sesión
@@ -572,11 +593,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </div>
             </div>
 
-            <motion.button
+            <Button
               onClick={handleVerifyCode}
               disabled={loading}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+              type="button"
             >
               {loading ? (
                 <>
@@ -586,7 +607,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               ) : (
                 "Verificar código"
               )}
-            </motion.button>
+            </Button>
           </div>
         );
 
@@ -670,11 +691,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </div>
             </div>
 
-            <motion.button
+            <Button
               onClick={handleResetPassword}
               disabled={loading}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+              type="button"
             >
               {loading ? (
                 <>
@@ -684,7 +705,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               ) : (
                 "Actualizar contraseña"
               )}
-            </motion.button>
+            </Button>
           </div>
         );
 
@@ -696,7 +717,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Header */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -712,7 +732,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </p>
         </motion.div>
 
-        {/* Card */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -721,14 +740,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           <Card className="p-8 shadow-2xl">
             {forgotPasswordStep === 'login' ? (
               <>
-                {/* Tabs */}
                 <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                   <button
                     onClick={() => handleTabChange(true)}
                     disabled={loading}
                     className={`flex-1 py-2 rounded-md transition-all ${
                       isLogin 
-                        ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow font-medium' 
+                        ? 'bg-emerald-300 text-emerald-400 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow font-medium' 
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                     type="button"
@@ -739,8 +757,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     onClick={() => handleTabChange(false)}
                     disabled={loading}
                     className={`flex-1 py-2 rounded-md transition-all ${
-                      !isLogin 
-                        ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow font-medium' 
+                      !isLogin
+                        ? 'bg-emerald-300 text-emerald-400 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow font-medium' 
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                     type="button"
@@ -749,7 +767,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   </button>
                 </div>
 
-                {/* Formulario */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <AnimatePresence mode="wait">
                     {!isLogin && (
@@ -837,11 +854,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     </p>
                   </div>
 
-                  <motion.button
+                  {loginError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-700 dark:border-red-600"
+                    >
+                      <p className="text-red-700 text-sm text-center">
+                        {loginError}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  <Button
                     type="submit"
                     disabled={loading}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 rounded-lg hover:from-emerald-600 hover:to-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
                   >
                     {loading ? (
                       <>
@@ -853,7 +881,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     ) : (
                       "Crear cuenta"
                     )}
-                  </motion.button>
+                  </Button>
                 </form>
 
                 {isLogin && (
@@ -880,13 +908,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </div>
               </>
             ) : (
-              // Formulario de recuperación de contraseña
               renderForgotPassword()
             )}
           </Card>
         </motion.div>
 
-        {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
