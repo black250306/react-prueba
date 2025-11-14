@@ -2,57 +2,104 @@ import { useEffect, useState } from "react";
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { ArrowUpRight, Gift, Leaf } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface HomeProps {
   onNavigateToRewards: () => void;
 }
 
+interface Transaction {
+  id: number;
+  type: "scan" | "redeem";
+  description: string;
+  location: string;
+  points: number;
+  date: string;
+  extra?: {
+    codigo_qr: string;
+  };
+}
+
+interface PuntosResponse {
+  puntos: number;
+}
+
 export function Home({ onNavigateToRewards }: HomeProps) {
-  const API_URL = "https://ecopoints.hvd.lat/api/";
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? '/api' 
+    : 'https://ecopoints.hvd.lat/api';
+  
   const idusuario = localStorage.getItem("usuario_id");
+  const token = localStorage.getItem("token");
   const [botellas, setBotellas] = useState(0);
   const [mostrarTodo, setMostrarTodo] = useState(false);
-
-  type Transaction = {
-    id: string;
-    type: "scan" | "redeem";
-    description: string;
-    location: string;
-    points: number;
-    date: string; 
-  };
-
+  const [loading, setLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
-  const obtenerHistorial = async () => {
-    try {
-      const response = await fetch(`${API_URL}/obtenerHistorial?usuario_id=${idusuario}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data: Transaction[] = await response.json();
-      setRecentTransactions(data);
-    } catch (error) {
-      console.error("Error al obtener historial:", error);
-    }
-  };
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  });
 
-  const obtenerPuntos = async (idusuario: string) => {
+  const obtenerPuntos = async () => {
+    if (!idusuario || !token) return;
+
     try {
-      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`);
+      const response = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
+      
+      const data: PuntosResponse = await response.json();
       setBotellas(data.puntos || 0);
     } catch (error) {
       console.error("Error al obtener puntos:", error);
     }
   };
 
-  useEffect(() => {
-    if (idusuario) {
-      obtenerHistorial();
-      obtenerPuntos(idusuario);
+  const obtenerHistorial = async () => {
+    if (!idusuario || !token) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/obtenerHistorial?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const data: Transaction[] = await response.json();
+      // Ordenar por fecha (más reciente primero)
+      const transaccionesOrdenadas = data.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setRecentTransactions(transaccionesOrdenadas);
+    } catch (error) {
+      console.error("Error al obtener historial:", error);
     }
-  }, [idusuario]);
+  };
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          obtenerPuntos(),
+          obtenerHistorial()
+        ]);
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (idusuario && token) {
+      cargarDatos();
+    } else {
+      setLoading(false);
+    }
+  }, [idusuario, token]);
 
   // Mostrar solo las primeras 4 si no se ha activado "ver todo"
   const transaccionesAMostrar = mostrarTodo
@@ -100,7 +147,6 @@ export function Home({ onNavigateToRewards }: HomeProps) {
                   )
                 }
               </div>
-
             </div>
             <div className="flex gap-3 pt-2">
               <Button
@@ -158,7 +204,7 @@ export function Home({ onNavigateToRewards }: HomeProps) {
                     </div>
                     <div>
                       <p className="text-gray-900 dark:text-white">{transaction.description}</p>
-                      <p className="text-gray-500 text-smtext-gray-500 dark:text-gray-400">{transaction.location}</p>
+                      <p className="text-gray-500 text-sm dark:text-gray-400">{transaction.location}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -186,4 +232,4 @@ export function Home({ onNavigateToRewards }: HomeProps) {
       </div>
     </div>
   );
-}
+} 

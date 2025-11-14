@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { QrCode, X, CheckCircle2, Camera, Minus, Plus } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 // Estilos para la barra de zoom
@@ -41,21 +41,26 @@ export function QRScanner() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScannerRunning = useRef(false);
   const videoTrackRef = useRef<MediaStreamTrack | null>(null);
+  
   const idusuario = localStorage.getItem("usuario_id");
+  const token = localStorage.getItem("token");
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? '/api' 
+    : 'https://ecopoints.hvd.lat/api';
 
-  // Configuración de zoom
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 4;
   const ZOOM_STEP = 0.5;
 
-  // Función para verificar si la cámara soporta zoom
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  });
+
   const checkZoomSupport = (track: MediaStreamTrack): boolean => {
     try {
       const capabilities = track.getCapabilities();
-      // Verificar soporte de zoom de diferentes maneras
-      const hasZoom = 
-        (capabilities as any).zoom !== undefined;
-      
+      const hasZoom = (capabilities as any).zoom !== undefined;
       console.log('Capacidades de la cámara:', capabilities);
       return hasZoom;
     } catch (error) {
@@ -64,7 +69,6 @@ export function QRScanner() {
     }
   };
 
-  // Función para aplicar zoom REAL a la cámara
   const applyRealZoom = async (newZoom: number) => {
     if (!videoTrackRef.current || !supportsZoom) {
       console.log('Zoom no soportado en este dispositivo');
@@ -82,7 +86,6 @@ export function QRScanner() {
       
     } catch (error) {
       console.error('Error al aplicar zoom:', error);
-      // Si falla, usar zoom simulado
       simulateDigitalZoom(newZoom);
     }
   };
@@ -114,11 +117,9 @@ export function QRScanner() {
     }
   };
 
-  // Función para simular zoom digital (alternativa cuando no hay soporte nativo)
   const simulateDigitalZoom = (level: number) => {
     const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
     if (videoElement) {
-      // Ajustar el tamaño del video para simular zoom
       const scale = level;
       videoElement.style.transform = `scale(${scale})`;
       videoElement.style.transformOrigin = 'center center';
@@ -126,7 +127,6 @@ export function QRScanner() {
       videoElement.style.height = `${100 * scale}%`;
     }
     setZoomLevel(level);
-    toast.info(`Zoom ajustado a ${level}x`);
   };
 
   const startScanning = async () => {
@@ -135,7 +135,6 @@ export function QRScanner() {
       const scanner = new Html5Qrcode("qr-reader");
       scannerRef.current = scanner;
 
-      // Usar el método tradicional de Html5Qrcode que sí funciona
       await scanner.start(
         { facingMode: "environment" },
         {
@@ -152,11 +151,9 @@ export function QRScanner() {
           handleScanSuccess(decodedText);
         },
         (errorMessage) => {
-          // Ignorar errores menores de escaneo
         }
       );
 
-      // Obtener el stream de video después de que Html5Qrcode haya iniciado
       setTimeout(async () => {
         try {
           const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
@@ -165,7 +162,6 @@ export function QRScanner() {
             const videoTrack = stream.getVideoTracks()[0];
             videoTrackRef.current = videoTrack;
 
-            // Verificar soporte de zoom
             const zoomSupported = checkZoomSupport(videoTrack);
             setSupportsZoom(zoomSupported);
 
@@ -205,7 +201,7 @@ export function QRScanner() {
   };
 
   const stopScanning = async () => {
-    // Resetear transformación de zoom simulado
+
     const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
     if (videoElement) {
       videoElement.style.transform = 'none';
@@ -213,7 +209,6 @@ export function QRScanner() {
       videoElement.style.height = '100%';
     }
 
-    // Detener el track de video
     if (videoTrackRef.current) {
       videoTrackRef.current.stop();
       videoTrackRef.current = null;
@@ -234,38 +229,49 @@ export function QRScanner() {
     setSupportsZoom(false);
   };
 
-  const handleScanSuccess = (qrData: string) => {
-    const API_URL = "https://ecopoints.hvd.lat/api/";
+  const handleScanSuccess = async (qrData: string) => {
+    console.log("QR escaneado:", qrData);
+    
+    if (!token) {
+      toast.error("No estás autenticado. Inicia sesión nuevamente.");
+      return;
+    }
 
     stopScanning();
 
-    fetch(`${API_URL}/validarQR`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        usuario_id: idusuario,
-        codigo_qr: qrData,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        const puntosGanados = data.puntos_obtenidos || 0;
-        setEarnedPoints(puntosGanados);
-        setShowSuccess(true);
-        toast.success(`¡Ganaste ${puntosGanados} ecopoints! 🎉`);
-      })
-      .catch((error) => {
-        console.error("Error al procesar el QR:", error);
-        setEarnedPoints(0);
-        toast.error("Error al procesar el código QR.");
+    try {
+      const response = await fetch(`${API_BASE}/validarQR`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          codigo_qr: qrData
+        }),
       });
+
+      console.log("Respuesta del servidor:", response);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Sesión expirada. Inicia sesión nuevamente.");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Datos recibidos:", data);
+
+      const puntosGanados = data.puntos_obtenidos || 0;
+      setEarnedPoints(puntosGanados);
+      setShowSuccess(true);
+      
+      toast.success(`¡${data.mensaje || "Escaneo exitoso"}! Ganaste ${puntosGanados} ecopoints 🎉`);
+
+    } catch (error) {
+      console.error("Error al procesar el QR:", error);
+      setEarnedPoints(0);
+      toast.error("Error al procesar el código QR. Intenta nuevamente.");
+    }
 
     setTimeout(() => {
       setShowSuccess(false);

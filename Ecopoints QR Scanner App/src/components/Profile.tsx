@@ -48,52 +48,137 @@ interface ProfileProps {
 // -------------------------------------------------------
 
 export function Profile({ onViewStation, onLogout, theme = 'light', onToggleTheme }: ProfileProps) {
-  const API_URL = "https://ecopoints.hvd.lat/api/";
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? '/api' 
+    : 'https://ecopoints.hvd.lat/api';
+  
   const idusuario = localStorage.getItem("usuario_id");
+  const token = localStorage.getItem("token");
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const [botellas, setBotellas] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Headers con autorización
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  });
+
   // --- Obtener puntos ---
   const obtenerPuntos = async () => {
-    if (!idusuario) return;
+    if (!idusuario || !token) return;
+    
     try {
-      const response = await fetch(`${API_URL}/obtenerPuntos?usuario_id=${idusuario}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Token expirado en obtenerPuntos");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setBotellas(Number(data.puntos));
-    } catch {
+      setBotellas(Number(data.puntos) || 0);
+    } catch (error) {
+      console.error("Error al obtener puntos:", error);
       setBotellas(0);
     }
   };
 
   // --- Obtener historial ---
   const obtenerHistorial = async () => {
-    if (!idusuario) return;
+    if (!idusuario || !token) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/obtenerHistorial?usuario_id=${idusuario}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data: Transaction[] = await response.json();
-      setTransactions(data);
-    } catch {
+      const response = await fetch(`${API_BASE}/obtenerHistorial?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Token expirado en obtenerHistorial");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Historial recibido:", data);
+      
+      // Adaptar la respuesta de la API a tu interfaz Transaction
+      const transaccionesAdaptadas: Transaction[] = data.map((item: any) => ({
+        id: item.id?.toString() || Math.random().toString(),
+        type: item.tipo === "canje" ? "redeem" : "scan",
+        description: item.descripcion || "Transacción",
+        location: item.ubicacion || "EcoPoints",
+        points: item.puntos || 0,
+        date: item.fecha || new Date().toISOString()
+      }));
+      
+      setTransactions(transaccionesAdaptadas);
+    } catch (error) {
+      console.error("Error al obtener historial:", error);
       setTransactions([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (idusuario) {
-      obtenerPuntos();
-      obtenerHistorial();
-    } else {
-      setIsLoading(false);
-      setBotellas(0);
+  // Obtener historial de canjes
+  const obtenerHistorialCanjes = async () => {
+    if (!idusuario || !token) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/obtenerHistorialCanjes?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Historial de canjes:", data);
+        
+        // Combinar canjes con el historial normal
+        if (Array.isArray(data) && data.length > 0) {
+          const canjesAdaptados: Transaction[] = data.map((canje: any) => ({
+            id: `canje-${canje.id}`,
+            type: "redeem",
+            description: `Canje: ${canje.nombre_convenio || "Recompensa"}`,
+            location: canje.ubicacion || "EcoPoints",
+            points: canje.puntos_utilizados || 0,
+            date: canje.fecha_canje || new Date().toISOString()
+          }));
+          
+          setTransactions(prev => [...prev, ...canjesAdaptados]);
+        }
+      }
+    } catch (error) {
+      console.error("Error al obtener historial de canjes:", error);
     }
-  }, [idusuario]);
+  };
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      if (idusuario && token) {
+        await Promise.all([
+          obtenerPuntos(),
+          obtenerHistorial(),
+          obtenerHistorialCanjes()
+        ]);
+      } else {
+        setIsLoading(false);
+        setBotellas(0);
+      }
+    };
+
+    cargarDatos();
+  }, [idusuario, token]);
 
   // --- Cálculos CORREGIDOS ---
   const escaneos = transactions.filter(t => t.type === 'scan');
@@ -203,9 +288,24 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       {/* Estadísticas */}
       <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="grid grid-cols-3 gap-4 text-center dark:bg-gray-800">
-          <Stat icon={<Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400 " />} label="Puntos" value={botellas ?? '...'}type="puntos" />
-          <Stat icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />} label="Escaneos" value={isLoading ? '...' : totalScans}type="escaneos"  />
-          <Stat icon={<Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />} label="Nivel" value={level}type="nivel"  />
+          <Stat 
+            icon={<Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />} 
+            label="Puntos" 
+            value={botellas !== null ? botellas.toLocaleString() : '...'} 
+            type="puntos" 
+          />
+          <Stat 
+            icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />} 
+            label="Escaneos" 
+            value={isLoading ? '...' : totalScans.toLocaleString()} 
+            type="escaneos"  
+          />
+          <Stat 
+            icon={<Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />} 
+            label="Nivel" 
+            value={level} 
+            type="nivel"  
+          />
         </div>
       </Card>
 
@@ -221,7 +321,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
                   : '¡Nivel máximo alcanzado!'}
             </p>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
             <div
               className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full transition-all"
               style={{ width: `${progreso}%` }}
@@ -237,16 +337,40 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
       {/* Opciones */}
       <div className="space-y-2">
-
         <Separator className="my-2" />
 
-        <MenuButton icon={<QrCode className="w-5 h-5" />} label="Puntos de recoleccion" onClick={() => setActiveSection("")} />
-        <MenuButton icon={<Settings className="w-5 h-5" />} label="Configuración" onClick={() => setActiveSection("configuracion")} />
-        <MenuButton icon={<Bell className="w-5 h-5" />} label="Notificaciones" onClick={() => setActiveSection("notificaciones")} />
-        <MenuButton icon={<Shield className="w-5 h-5" />} label="Privacidad y seguridad" onClick={() => setActiveSection("privacidad")} />
+        <MenuButton 
+          icon={<QrCode className="w-5 h-5" />} 
+          label="Puntos de recolección" 
+          onClick={() => setActiveSection("")} 
+        />
+        <MenuButton 
+          icon={<Settings className="w-5 h-5" />} 
+          label="Configuración" 
+          onClick={() => setActiveSection("configuracion")} 
+        />
+        <MenuButton 
+          icon={<Bell className="w-5 h-5" />} 
+          label="Notificaciones" 
+          onClick={() => setActiveSection("notificaciones")} 
+        />
+        <MenuButton 
+          icon={<Shield className="w-5 h-5" />} 
+          label="Privacidad y seguridad" 
+          onClick={() => setActiveSection("privacidad")} 
+        />
         <Separator className="my-4" />
-        <MenuButton icon={<HelpCircle className="w-5 h-5" />} label="Ayuda y soporte" onClick={() => setActiveSection("ayuda")} />
-        <MenuButtonsa icon={<LogOut className="w-5 h-5" />} label="Cerrar sesión" className="text-red-600" onClick={onLogout} />
+        <MenuButton 
+          icon={<HelpCircle className="w-5 h-5" />} 
+          label="Ayuda y soporte" 
+          onClick={() => setActiveSection("ayuda")} 
+        />
+        <MenuButtonsa 
+          icon={<LogOut className="w-5 h-5" />} 
+          label="Cerrar sesión" 
+          className="text-red-600" 
+          onClick={onLogout} 
+        />
       </div>
 
       <div className="text-center pt-4">
@@ -264,7 +388,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: string; value: any; type: string }) {
   
   const typeColorMap: { [key: string]: string } = {
-    'puntos': 'bg-emerald-100 dark:bg-emerald-900 ',
+    'puntos': 'bg-emerald-100 dark:bg-emerald-900',
     'escaneos': 'bg-blue-100 dark:bg-blue-900',
     'nivel': 'bg-purple-100 dark:bg-purple-900',
     'info': 'bg-blue-100 dark:bg-blue-900', 
@@ -279,8 +403,8 @@ function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: stri
       <div className={iconClasses}> 
         {icon}
       </div>
-      <p className="text-gray-900 dark:text-white">{value}</p>
-      <p className="text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-gray-900 dark:text-white font-semibold">{value}</p>
+      <p className="text-gray-500 dark:text-gray-400 text-sm">{label}</p>
     </div>
   );
 }
@@ -293,10 +417,11 @@ function MenuButton({ icon, label, className = '', onClick }: { icon: React.Reac
     </Button>
   );
 }
+
 function MenuButtonsa({ icon, label, className = '', onClick }: { icon: React.ReactNode; label: string; className?: string; onClick?: () => void }) {
   return (
-    <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white ${className}`} onClick={onClick}>
-      <div className="flex items-center gap-3 text-red-600">{icon}<span>{label}</span></div>
+    <Button variant="ghost" className={`w-full justify-between hover:bg-gray-50 dark:hover:bg-gray-800 ${className}`} onClick={onClick}>
+      <div className="flex items-center gap-3">{icon}<span>{label}</span></div>
       <ChevronRight className="w-5 h-5" />
     </Button>
   );

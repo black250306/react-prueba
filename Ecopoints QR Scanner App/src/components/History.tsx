@@ -78,7 +78,7 @@ export function History() {
                     transaction.type === "scan" ? "text-emerald-600" : "text-orange-600"
                   }`}
                 >
-                  {transaction.type === "scan" ? "+" : ""}
+                  {transaction.type === "scan" ? "+" : "-"}
                   {transaction.points}
                 </p>
                 <p className="text-gray-500 text-sm">

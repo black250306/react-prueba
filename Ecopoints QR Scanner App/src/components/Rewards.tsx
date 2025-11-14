@@ -19,7 +19,7 @@ export interface Reward {
   image: string;
   validity?: string;
   codigo_entrega?: string;
-  stock: number; // ✅ Nuevo campo para el stock
+  stock: number;
 }
 
 interface RewardsProps {
@@ -27,20 +27,33 @@ interface RewardsProps {
   onRedeem: (reward: Reward) => void;
 }
 
-export function Rewards({ onRedeem }: RewardsProps) {
-  const API_BASE_URL = "https://ecopoints.hvd.lat/";
-  const LISTAR_CONVENIOS_ENDPOINT = "api/listarConvenios";
-  const REGISTRAR_CANJE_ENDPOINT = "api/canjearPuntos";
-  const OBTENER_PUNTOS_ENDPOINT = "api/obtenerPuntos";
+interface CanjeResponse {
+  mensaje: string;
+  codigo_entrega: string;
+  puntos_restantes: number;
+  error?: string;
+}
 
+export function Rewards({ onRedeem }: RewardsProps) {
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? '/api' 
+    : 'https://ecopoints.hvd.lat/api';
+  
   const idusuario = localStorage.getItem("usuario_id");
+  const token = localStorage.getItem("token");
 
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loadingRewards, setLoadingRewards] = useState(true);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redeemedReward, setRedeemedReward] = useState<Reward | null>(null);
-  const [botellas, setBotellas] = useState("0");
+  const [botellas, setBotellas] = useState(0);
+
+  // Headers con autorización
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  });
 
   // Función para mapear empresas a categorías
   const mapCategory = (empresa: string): string => {
@@ -93,13 +106,19 @@ export function Rewards({ onRedeem }: RewardsProps) {
     return 'other';
   };
 
-  // Función para obtener la lista de convenios CON STOCK
+  // Función para obtener la lista de convenios
   const listarConvenios = async () => {
     setLoadingRewards(true);
     try {
-      const response = await fetch(`${API_BASE_URL}${LISTAR_CONVENIOS_ENDPOINT}`);
+      const response = await fetch(`${API_BASE}/listarConvenios`, {
+        headers: getAuthHeaders()
+      });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Sesión expirada. Inicia sesión nuevamente.");
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -109,14 +128,14 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
       const mappedRewards: Reward[] = data.map((item: any) => ({
         id: item.id.toString(),
-        name: item.titulo || 'Convenio sin título',
+        name: item.titulo || item.nombre || 'Convenio sin título',
         brand: item.empresa || 'Empresa no especificada',
         description: item.descripcion || 'Sin descripción',
         points: parseInt(item.puntos_requeridos) || 0,
         category: mapCategory(item.empresa),
         image: item.imagen_url || item.logo_url || 'https://images.unsplash.com/photo-1542831371-29b0f74f9d13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdG9jayUyMG1lYWx8ZW58MXx8fHwxNzYzMTk2NzU5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         validity: item.vigencia || "30 días",
-        stock: parseInt(item.stock) || 0, // Incluir stock del JSON
+        stock: parseInt(item.stock) || 0,
       }));
 
       setRewards(mappedRewards);
@@ -130,21 +149,32 @@ export function Rewards({ onRedeem }: RewardsProps) {
   };
 
   const obtenerPuntos = async () => {
-    if (!idusuario) return;
+    if (!idusuario || !token) return;
+    
     try {
-      const response = await fetch(`${API_BASE_URL}${OBTENER_PUNTOS_ENDPOINT}?usuario_id=${idusuario}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${idusuario}`, {
+        headers: getAuthHeaders()
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("Sesión expirada. Inicia sesión nuevamente.");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setBotellas(data.puntos ? data.puntos.toString() : "0");
+      setBotellas(data.puntos || 0);
     } catch (error) {
       console.error("Error al obtener puntos:", error);
-      setBotellas("0");
+      setBotellas(0);
     }
   };
 
-  // ✅ FUNCIÓN CORREGIDA PARA MANEJAR EL JSON DE LA API
-  const registrarCanje = async (reward: Reward) => {
-    if (!idusuario) {
+  // ✅ FUNCIÓN CORREGIDA - INCLUYE usuario_id EN EL BODY
+  const canjearPuntos = async (reward: Reward) => {
+    if (!idusuario || !token) {
       toast.error("Error: Sesión de usuario no encontrada.");
       return;
     }
@@ -157,22 +187,20 @@ export function Rewards({ onRedeem }: RewardsProps) {
         convenio_id: parseInt(reward.id)
       });
 
-      const response = await fetch(`${API_BASE_URL}${REGISTRAR_CANJE_ENDPOINT}`, {
+      const response = await fetch(`${API_BASE}/canjearPuntos`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
-          usuario_id: parseInt(idusuario),
+          usuario_id: parseInt(idusuario), // ✅ AÑADIDO: usuario_id requerido
           convenio_id: parseInt(reward.id)
         }),
       });
 
-      const data = await response.json();
+      const data: CanjeResponse = await response.json();
       
       console.log("📨 Respuesta del canje:", data);
 
-      // ✅ MANEJO CORREGIDO DEL JSON DE RESPUESTA
+      // ✅ VERIFICAR SI HAY ERROR EN LA RESPUESTA
       if (!response.ok || data.error) {
         // Manejar diferentes tipos de errores
         if (data.error && data.error.includes('puntos insuficientes')) {
@@ -184,8 +212,8 @@ export function Rewards({ onRedeem }: RewardsProps) {
         }
       }
 
-      // ✅ VERIFICAR SI LA RESPUESTA ES EXITOSA SEGÚN EL NUEVO JSON
-      if (data.mensaje && data.mensaje.includes('éxito')) {
+      // ✅ VERIFICAR SI EL CANJE FUE EXITOSO
+      if (data.mensaje && (data.mensaje.includes('éxito') || data.mensaje.includes('exito'))) {
         // Canje exitoso
         onRedeem(reward);
 
@@ -198,7 +226,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
         // ✅ Actualizar puntos con los puntos restantes del JSON
         if (data.puntos_restantes !== undefined) {
-          setBotellas(data.puntos_restantes.toString());
+          setBotellas(data.puntos_restantes);
         } else {
           // Si no vienen puntos restantes, obtenerlos de nuevo
           await obtenerPuntos();
@@ -207,7 +235,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
         // Actualizar lista de convenios
         await listarConvenios();
 
-        toast.success('¡Canje realizado exitosamente!');
+        toast.success(data.mensaje || '¡Canje realizado exitosamente!');
 
         setTimeout(() => {
           setShowSuccess(false);
@@ -226,13 +254,13 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
   useEffect(() => {
     listarConvenios();
-    if (idusuario) {
+    if (idusuario && token) {
       obtenerPuntos();
     }
-  }, [idusuario]);
+  }, [idusuario, token]);
 
   const handleRedeemClick = (reward: Reward) => {
-    const currentPoints = parseFloat(botellas) || 0;
+    const currentPoints = botellas || 0;
     const hasStock = reward.stock > 0;
     
     if (currentPoints >= reward.points && hasStock) {
@@ -246,7 +274,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
 
   const confirmRedeem = () => {
     if (selectedReward) {
-      registrarCanje(selectedReward);
+      canjearPuntos(selectedReward);
     }
   };
 
@@ -256,7 +284,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
   };
 
   const RewardCard = ({ reward }: { reward: Reward }) => {
-    const currentPoints = parseFloat(botellas) || 0;
+    const currentPoints = botellas || 0;
     const canAfford = currentPoints >= reward.points;
     const hasStock = reward.stock > 0;
     const canRedeem = canAfford && hasStock;
@@ -272,7 +300,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
             />
           </div>
           
-          {/* ✅ BADGE DE STOCK */}
+          {/* BADGE DE STOCK */}
           <div className="absolute top-2 left-2">
             {hasStock ? (
               <Badge className="bg-green-500 text-white flex items-center gap-1">
@@ -304,20 +332,20 @@ export function Rewards({ onRedeem }: RewardsProps) {
               <span className="text-gray-500 dark:text-gray-400">pts</span>
             </div>
             
-            {/* ✅ BOTÓN CON ESTADO DE STOCK */}
+            {/* BOTÓN CON ESTADO DE STOCK */}
             <Button
               size="sm"
               onClick={() => handleRedeemClick(reward)}
               disabled={!canRedeem}
               className={
                 canRedeem ? 'bg-emerald-600 hover:bg-emerald-700' :
-                !hasStock ? 'bg-black cursor-not-allowed dark:bg-gray-800 text-white' :
-                'bg-amber-500 hover:bg-amber-600 dark:bg-red-600 text-white'
+                !hasStock ? 'bg-gray-400 cursor-not-allowed' :
+                'bg-amber-500 hover:bg-amber-600'
               }
             >
               {canRedeem ? 'Canjear' : 
                !hasStock ? 'Sin stock' : 
-               'CANJEAR'}
+               'Insuficiente'}
             </Button>
           </div>
 
@@ -345,17 +373,8 @@ export function Rewards({ onRedeem }: RewardsProps) {
           <div>
             <p className="text-emerald-100 mb-1">Tus ecopoints</p>
             <div className="flex items-baseline gap-2">
-              {botellas !== "0"
-                ? (
-                  <>
-                    <span className="text-3xl font-semibold">{parseFloat(botellas).toLocaleString()}</span>
-                    <span className="text-emerald-100">puntos</span>
-                  </>
-                )
-                : (
-                  <span className="text-sm text-emerald-100 italic">Cargando...</span>
-                )
-              }
+              <span className="text-3xl font-semibold">{botellas.toLocaleString()}</span>
+              <span className="text-emerald-100">puntos</span>
             </div>
           </div>
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -418,7 +437,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
         )}
       </Tabs>
 
-      {/* Dialogo de Confirmación CON INFORMACIÓN DE STOCK */}
+      {/* Dialogo de Confirmación */}
       <Dialog open={!!selectedReward} onOpenChange={(open: boolean) => !open && setSelectedReward(null)}>
         <DialogContent>
           <DialogHeader>
@@ -443,7 +462,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
                 <p className="text-gray-600 mt-2">{selectedReward.description}</p>
               </div>
               
-              {/* ✅ INFORMACIÓN DE STOCK EN EL DIÁLOGO */}
+              {/* INFORMACIÓN DE STOCK EN EL DIÁLOGO */}
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                 <span className="text-gray-700 flex items-center gap-2">
                   <Package className="w-4 h-4" />
@@ -463,7 +482,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
               </div>
               <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg">
                 <span className="text-gray-700">Tu saldo después:</span>
-                <span className="text-gray-900">{(parseFloat(botellas) || 0) - selectedReward.points} puntos</span>
+                <span className="text-gray-900">{(botellas || 0) - selectedReward.points} puntos</span>
               </div>
             </div>
           )}
@@ -483,7 +502,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogo de Éxito MEJORADO */}
+      {/* Dialogo de Éxito */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -547,3 +566,7 @@ export function Rewards({ onRedeem }: RewardsProps) {
     </div>
   );
 }
+
+
+
+
