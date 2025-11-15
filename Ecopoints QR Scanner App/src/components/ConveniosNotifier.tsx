@@ -9,8 +9,8 @@ interface Convenio {
 
 const ConveniosNotifier = () => {
 
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? '/api' 
+  const API_BASE = window.location.hostname === 'localhost'
+    ? '/api'
     : 'https://ecopoints.hvd.lat/api';
 
   const token = localStorage.getItem("token");
