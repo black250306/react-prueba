@@ -1,10 +1,13 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { QrCode, X, CheckCircle2, Camera, Minus, Plus } from 'lucide-react';
+import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
 
 const sliderStyles = `
   .zoom-slider::-webkit-slider-thumb {
@@ -128,6 +131,23 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
   };
 
   const startScanning = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const permissionStatus = await Camera.requestPermissions();
+        if (permissionStatus.camera !== 'granted') {
+          toast.error("Permiso de cámara denegado. Por favor, actívalo en los ajustes de la aplicación.");
+          setHasPermission(false);
+          setIsScanning(false);
+          return;
+        }
+      } catch (e) {
+        toast.error("Error al solicitar permiso de la cámara.");
+        console.error("Error requesting camera permission:", e);
+        setIsScanning(false);
+        return;
+      }
+    }
+
     try {
       setIsScanning(true);
       const scanner = new Html5Qrcode("qr-reader");
@@ -253,7 +273,6 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       const puntosGanados = data.puntos_obtenidos || 0;
       setEarnedPoints(puntosGanados);
       setShowSuccess(true);
-      // Notify parent (App) about the scanned transaction if a handler was provided
       try {
         onScanSuccess?.({
           type: 'scan',
@@ -262,7 +281,6 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           location: data.ubicacion || undefined,
         });
       } catch (err) {
-        // no-op: ensure parent handler errors don't break scanner flow
         console.error('onScanSuccess handler threw:', err);
       }
       
@@ -301,7 +319,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           {!isScanning && !showSuccess && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-4">
-                <Camera className="w-16 h-16 text-gray-400 mx-auto" />
+                <CameraIcon className="w-16 h-16 text-gray-400 mx-auto" />
                 <p className="text-gray-400">Toca el botón para iniciar el escaneo</p>
               </div>
             </div>
@@ -439,7 +457,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
             onClick={startScanning}
             disabled={showSuccess}
           >
-            <Camera className="w-6 h-6 mr-3" />
+            <CameraIcon className="w-6 h-6 mr-3" />
             Iniciar escaneo con cámara
           </Button>
         ) : (
