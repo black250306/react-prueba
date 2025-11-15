@@ -1,6 +1,6 @@
 {
-  "appId": "com.ecopoints.qrscanner",
-  "appName": "Ecopoints QR Scanner App",
+  "appId": "com.ecopoints.app",
+  "appName": "Ecopoints App",
   "webDir": "build",
   "server": {
     "androidScheme": "https",
