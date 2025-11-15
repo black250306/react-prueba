@@ -30,7 +30,11 @@ const sliderStyles = `
   }
 `;
 
-export function QRScanner() {
+interface QRScannerProps {
+  onScanSuccess?: (transaction: { type: 'scan'; points: number; description: string; location?: string }) => void;
+}
+
+export function QRScanner({ onScanSuccess }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
@@ -249,6 +253,18 @@ export function QRScanner() {
       const puntosGanados = data.puntos_obtenidos || 0;
       setEarnedPoints(puntosGanados);
       setShowSuccess(true);
+      // Notify parent (App) about the scanned transaction if a handler was provided
+      try {
+        onScanSuccess?.({
+          type: 'scan',
+          points: puntosGanados,
+          description: data.mensaje || 'Escaneo QR',
+          location: data.ubicacion || undefined,
+        });
+      } catch (err) {
+        // no-op: ensure parent handler errors don't break scanner flow
+        console.error('onScanSuccess handler threw:', err);
+      }
       
       toast.success(`¡${data.mensaje || "Escaneo exitoso"}! Ganaste ${puntosGanados} ecopoints 🎉`);
 

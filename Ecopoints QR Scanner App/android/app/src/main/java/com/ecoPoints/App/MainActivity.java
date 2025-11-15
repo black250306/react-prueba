@@ -1,4 +1,4 @@
-package com.ecopoints.qrscanner;
+package com.ecoPoints.App;
 
 import com.getcapacitor.BridgeActivity;
 

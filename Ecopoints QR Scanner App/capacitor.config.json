@@ -1,5 +1,5 @@
 {
-  "appId": "com.ecopoints.app",
+  "appId": "com.ecoPoints.App",
   "appName": "Ecopoints App",
   "webDir": "build",
   "server": {
@@ -9,10 +9,10 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 3000,
-      "launchAutoHide": true,
+      "launchAutoHide": false,
       "androidScaleType": "CENTER_CROP",
-      "splashImmersive": true,
-      "backgroundColor": "#ffffff"
+      "splashImmersive": false,
+      "backgroundColor": "#FFFFFF"
     },
     "Camera": {
       "permissions": [

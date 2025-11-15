@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { Home } from './components/Home';
 import { QRScanner } from './components/QRScanner';
 import { History } from './components/History';
@@ -49,6 +50,9 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Hide the splash screen once the app component mounts
+    SplashScreen.hide();
+    
     const usuarioId = localStorage.getItem("usuario_id");
     if (usuarioId) setIsLoggedIn(true);
     setIsCheckingLogin(false);
@@ -108,7 +112,7 @@ export default function App() {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="pt-safe-top pb-safe-bottom min-h-screen bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <PushNotificationsHandler />
       <div className="max-w-md mx-auto min-h-screen flex flex-col shadow-xl dark:shadow-gray-900">
         <div className="flex-1 overflow-auto pb-20 bg-humo dark:bg-gray-900">
