@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Home } from './components/Home';
-// import { QRScanner } from './components/QRScanner'; 
+import { QRScanner } from './components/QRScanner';
 import { History } from './components/History';
 import { Profile } from './components/Profile';
 import { Rewards, Reward } from './components/Rewards';
@@ -8,7 +8,6 @@ import { BottomNav } from './components/BottomNav';
 import { Toaster } from './components/ui/sonner';
 import Login from './components/Login';
 import PushNotificationsHandler from './components/PushNotificationsHandler';
-import { Camera, CameraResultType } from '@capacitor/camera';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,7 +15,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'scan' | 'history' | 'profile' | 'rewards'>('home');
   const [balance, setBalance] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const detectSystemTheme = () => {
@@ -26,16 +24,24 @@ export default function App() {
         setTheme('light');
       }
     };
+
     detectSystemTheme();
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleThemeChange = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
     mediaQuery.addEventListener('change', handleThemeChange);
+
     return () => mediaQuery.removeEventListener('change', handleThemeChange);
   }, []);
 
   useEffect(() => {
-    if (theme === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   const handleToggleTheme = () => {
@@ -48,23 +54,6 @@ export default function App() {
     setIsCheckingLogin(false);
   }, []);
 
-  const takePicture = async () => {
-    try {
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Uri
-      });
-      
-      // --- LÍNEA CORREGIDA ---
-      // Si image.webPath no existe, le pasamos null para evitar el error de TypeScript.
-      setImageSrc(image.webPath ?? null);
-
-    } catch (error) {
-      console.error('Error al usar la cámara', error);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("usuario_id");
     setIsLoggedIn(false);
@@ -74,35 +63,26 @@ export default function App() {
     setBalance(prev => prev - reward.points);
   };
 
+  const handleScanSuccess = (transaction: { type: 'scan'; points: number; description: string; location?: string }) => {
+    setBalance(prev => prev + transaction.points);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'home':
         return <Home onNavigateToRewards={() => setCurrentView('rewards')} />;
       case 'scan':
-        return (
-          <div className="p-6 text-center">
-            <h1 className="text-2xl font-bold mb-4 dark:text-white">Tomar Foto</h1>
-            <p className="mb-6 dark:text-gray-300">
-              Presiona el botón para abrir la cámara. La app te pedirá los permisos necesarios.
-            </p>
-            <button
-              onClick={takePicture}
-              className="bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-emerald-600 transition-colors shadow-lg"
-            >
-              Abrir Cámara
-            </button>
-            {imageSrc && (
-              <div className="mt-8">
-                <p className="dark:text-white font-semibold">¡Foto capturada!</p>
-                <img src={imageSrc} alt="Foto del usuario" className="mt-4 rounded-lg shadow-md mx-auto" />
-              </div>
-            )}
-          </div>
-        );
+        return <QRScanner onScanSuccess={handleScanSuccess} />;
       case 'history':
         return <History />;
       case 'profile':
-        return <Profile onLogout={handleLogout} theme={theme} onToggleTheme={handleToggleTheme} />;
+        return (
+          <Profile
+            onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+          />
+        );
       case 'rewards':
         return <Rewards balance={balance} onRedeem={handleRedeem} />;
       default:
@@ -111,10 +91,21 @@ export default function App() {
   };
 
   if (isCheckingLogin)
-    return <div className="flex items-center justify-center h-screen text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900">Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900">
+        Cargando...
+      </div>
+    );
 
   if (!isLoggedIn)
-    return <Login onLoginSuccess={(usuarioId: string) => { localStorage.setItem("usuario_id", usuarioId); setIsLoggedIn(true); }} />;
+    return (
+      <Login
+        onLoginSuccess={(usuarioId: string) => {
+          localStorage.setItem("usuario_id", usuarioId);
+          setIsLoggedIn(true);
+        }}
+      />
+    );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
