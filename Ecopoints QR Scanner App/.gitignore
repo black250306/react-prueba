@@ -1,0 +1,9 @@
+﻿# Node
+/node_modules
+
+# Build artifacts
+/build
+/dist
+/android/build
+/android/.gradle
+/android/app/build
