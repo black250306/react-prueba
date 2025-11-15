@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.EcoPoints.App"
+    namespace "com.ecopoints.qrscanner"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.EcoPoints.App"
+        applicationId "com.ecopoints.qrscanner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

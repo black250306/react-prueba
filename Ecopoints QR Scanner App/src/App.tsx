@@ -7,6 +7,7 @@ import { Rewards, Reward } from './components/Rewards';
 import { BottomNav } from './components/BottomNav';
 import { Toaster } from './components/ui/sonner';
 import Login from './components/Login';
+import PushNotificationsHandler from './components/PushNotificationsHandler'; // <-- 1. IMPORTAR
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -106,6 +107,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
+      <PushNotificationsHandler /> {/* <-- 2. AÑADIR EL GESTOR */}
       <div className="max-w-md mx-auto min-h-screen flex flex-col shadow-xl dark:shadow-gray-900">
         <div className="flex-1 overflow-auto pb-20 bg-humo dark:bg-gray-900">
           {renderView()}
