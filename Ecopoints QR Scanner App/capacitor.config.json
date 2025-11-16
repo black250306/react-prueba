@@ -8,11 +8,16 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 3000,
-      "launchAutoHide": false,
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
       "androidScaleType": "CENTER_CROP",
       "splashImmersive": false,
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#00b975"
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#c6d4cc"
     },
     "Camera": {
       "permissions": [
