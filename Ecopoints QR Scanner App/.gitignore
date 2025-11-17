@@ -1,1 +1,10 @@
-\node_modules
+/node_modules
+/build
+build/index.html
+build/assets/index-9f19fc50.js
+build/assets/web-ea14fb0c.js
+build/index.html
+
+/build
+build/index.html
+build/index.html

@@ -1,26 +1,9 @@
 ext {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     minSdkVersion = 23
     compileSdkVersion = 35
     targetSdkVersion = 35
     androidxActivityVersion = '1.8.0'
     androidxAppCompatVersion = '1.6.1'
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-    minSdkVersion = 26
-    compileSdkVersion = 35
-    targetSdkVersion = 35
-    androidxActivityVersion = '1.9.2'
-    androidxAppCompatVersion = '1.7.0'
->>>>>>> Stashed changes
     androidxCoordinatorLayoutVersion = '1.2.0'
     androidxCoreVersion = '1.12.0'
     androidxFragmentVersion = '1.6.2'

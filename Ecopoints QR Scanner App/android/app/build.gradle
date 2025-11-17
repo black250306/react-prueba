@@ -1,17 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.ecopoints.qrscanner"
+    namespace "com.ecoPoints.App"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.ecopoints.qrscanner"
+        applicationId "com.ecoPoints.App"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
     
@@ -28,9 +28,6 @@ android {
         }
     }
 }
-<<<<<<< HEAD
-// ... (El resto del archivo, que parece estar bien)
-=======
 
 repositories {
     flatDir{
@@ -68,4 +65,3 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
->>>>>>> 425e34a4ca0bd42b8ea996bd2ea02dce27f29768

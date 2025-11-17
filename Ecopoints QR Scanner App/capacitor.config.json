@@ -1,6 +1,6 @@
 {
-  "appId": "com.ecopoints.qrscanner",
-  "appName": "Ecopoints QR Scanner App",
+  "appId": "com.ecoPoints.App",
+  "appName": "Ecopoints App",
   "webDir": "build",
   "server": {
     "androidScheme": "https",
@@ -25,10 +25,7 @@
           "alias": "camera",
           "reason": "Necesitamos acceso a la cámara para escanear los códigos QR de las estaciones de reciclaje."
         }
-      ],
-      "saveToGallery": false,
-      "allowEditing": false,
-      "quality": 90
+      ]
     },
     "Geolocation": {
       "permissions": [
@@ -40,13 +37,6 @@
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
-    },
-    "LocalNotifications": {
-      "smallIcon": "ic_stat_icon_config_sample",
-      "iconColor": "#488ACF"
     }
-  },
-  "android": {
-    "allowMixedContent": true
   }
 }
