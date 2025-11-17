@@ -177,7 +177,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           label.includes('back') ||
           label.includes('rear') ||
           label.includes('trasera') ||
-
+          label.includes('0') ||
           label.includes('1');
       }) || cameras[0];
 
@@ -220,7 +220,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       console.log("Iniciando scanner con configuración:", config);
 
       await scanner.start(
-        cameraId,
+        { facingMode: "environment" },
         config,
         (decodedText) => {
           console.log("QR escaneado exitosamente:", decodedText);
