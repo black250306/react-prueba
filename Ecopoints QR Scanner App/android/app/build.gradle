@@ -2,10 +2,17 @@ apply plugin: 'com.android.application'
 
 android {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     namespace "com.ecoPoints.App"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.ecoPoints.App"
+=======
+    namespace "com.ecopoints.qrscanner"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.ecopoints.qrscanner"
+>>>>>>> Stashed changes
 =======
     namespace "com.ecopoints.qrscanner"
     compileSdk rootProject.ext.compileSdkVersion

@@ -5,6 +5,9 @@
 =======
   "appId": "com.ecopoints.qrscanner",
   "appName": "Ecopoints QR Scanner App",
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   "webDir": "build",
   "server": {
@@ -12,6 +15,7 @@
     "hostname": "app.ecopoints.local"
   },
   "plugins": {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     "SplashScreen": {
       "launchShowDuration": 2000,
@@ -45,6 +49,8 @@
       "presentationOptions": ["badge", "sound", "alert"]
     }
 =======
+=======
+>>>>>>> Stashed changes
     "Camera": {
       "saveToGallery": false,
       "allowEditing": false,
@@ -57,6 +63,9 @@
   },
   "android": {
     "allowMixedContent": true
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   }
 }
