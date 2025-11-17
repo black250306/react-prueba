@@ -7,6 +7,9 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -21,8 +24,11 @@ import { Capacitor } from '@capacitor/core';
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Device } from '@capacitor/device';
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -57,12 +63,15 @@ const sliderStyles = `
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 interface QRScannerProps {
   onScanSuccess?: (transaction: { type: 'scan'; points: number; description: string; location?: string }) => void;
 }
 
 export function QRScanner({ onScanSuccess }: QRScannerProps) {
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -83,8 +92,13 @@ export function QRScanner() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [isNative, setIsNative] = useState(false);
+=======
+  const [currentPlatform, setCurrentPlatform] = useState<'web' | 'native'>('web');
+  
+>>>>>>> Stashed changes
 =======
   const [currentPlatform, setCurrentPlatform] = useState<'web' | 'native'>('web');
   
@@ -116,6 +130,7 @@ export function QRScanner() {
     "Authorization": `Bearer ${token}`
   });
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -328,6 +343,8 @@ export function QRScanner() {
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
   // Detectar plataforma al montar el componente
   useEffect(() => {
     const platform = isNativePlatform() ? 'native' : 'web';
@@ -339,6 +356,9 @@ export function QRScanner() {
   // ===============================
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -366,6 +386,7 @@ export function QRScanner() {
     setZoomLevel(level);
   };
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -397,6 +418,8 @@ export function QRScanner() {
     } else {
       await scanWithHtml5Qr();
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -507,7 +530,10 @@ export function QRScanner() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -609,6 +635,9 @@ export function QRScanner() {
     }
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -724,6 +753,9 @@ export function QRScanner() {
             📱 Modo App Nativa
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -774,6 +806,9 @@ export function QRScanner() {
                   />
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -788,7 +823,10 @@ export function QRScanner() {
                       transition={{ duration: 1.5, repeat: Infinity }}
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                     >
@@ -866,6 +904,7 @@ export function QRScanner() {
             </>
           )}
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
           {/* Vista de escaneo NATIVO activo */}
@@ -972,6 +1011,10 @@ export function QRScanner() {
       {/* Control de Zoom (solo para web) */}
       {isScanning && currentPlatform === 'web' && (
 >>>>>>> Stashed changes
+=======
+      {/* Control de Zoom (solo para web) */}
+      {isScanning && currentPlatform === 'web' && (
+>>>>>>> Stashed changes
         <Card className="p-4 bg-blue-50 border-blue-200">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -1053,6 +1096,9 @@ export function QRScanner() {
             Iniciar escaneo {currentPlatform === 'native' ? 'con App' : 'con cámara'}
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -1068,7 +1114,11 @@ export function QRScanner() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             {isNative ? "Cancelar" : "Detener escaneo"}
+=======
+            {currentPlatform === 'native' ? 'Cerrar escáner' : 'Detener escaneo'}
+>>>>>>> Stashed changes
 =======
             {currentPlatform === 'native' ? 'Cerrar escáner' : 'Detener escaneo'}
 >>>>>>> Stashed changes
@@ -1085,6 +1135,7 @@ export function QRScanner() {
       <Card className="p-4 bg-emerald-50 border-emerald-200">
         <div className="space-y-2">
           <p className="text-emerald-900 font-semibold">
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -1111,6 +1162,11 @@ export function QRScanner() {
           </p>
           <ul className="text-emerald-700 space-y-1 ml-4">
 >>>>>>> Stashed changes
+=======
+            Consejos para {currentPlatform === 'native' ? 'App' : 'Web'}:
+          </p>
+          <ul className="text-emerald-700 space-y-1 ml-4">
+>>>>>>> Stashed changes
             {currentPlatform === 'native' ? (
               <>
                 <li>• El escáner abrirá en pantalla completa</li>
@@ -1119,6 +1175,9 @@ export function QRScanner() {
                 <li>• Acepta automáticamente los permisos</li>
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -1136,9 +1195,12 @@ export function QRScanner() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             {hasPermission === false && (
               <li className="text-yellow-600 font-semibold">• Permite el acceso a la cámara en tu dispositivo</li>
             )}
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
