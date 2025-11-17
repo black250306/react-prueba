@@ -1,13 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
+<<<<<<< Updated upstream
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+=======
+import { Html5Qrcode } from 'html5-qrcode';
+// Importación Correcta (Usando el plugin de la comunidad)
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+>>>>>>> Stashed changes
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Capacitor } from '@capacitor/core';
+<<<<<<< Updated upstream
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Device } from '@capacitor/device';
+=======
+>>>>>>> Stashed changes
 
 const sliderStyles = `
   .zoom-slider::-webkit-slider-thumb {
@@ -33,23 +42,37 @@ const sliderStyles = `
   }
 `;
 
+<<<<<<< Updated upstream
 interface QRScannerProps {
   onScanSuccess?: (transaction: { type: 'scan'; points: number; description: string; location?: string }) => void;
 }
 
 export function QRScanner({ onScanSuccess }: QRScannerProps) {
+=======
+// Detectar el entorno
+const isNativePlatform = () => {
+  return Capacitor.isNativePlatform();
+};
+
+export function QRScanner() {
+>>>>>>> Stashed changes
   const [isScanning, setIsScanning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [supportsZoom, setSupportsZoom] = useState(false);
+<<<<<<< Updated upstream
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [isNative, setIsNative] = useState(false);
+=======
+  const [currentPlatform, setCurrentPlatform] = useState<'web' | 'native'>('web');
+  
+>>>>>>> Stashed changes
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScannerRunning = useRef(false);
   const videoTrackRef = useRef<MediaStreamTrack | null>(null);
-  
+
   const idusuario = localStorage.getItem("usuario_id");
   const token = localStorage.getItem("token");
   const API_BASE = window.location.hostname === 'localhost'
@@ -65,6 +88,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
     "Authorization": `Bearer ${token}`
   });
 
+<<<<<<< Updated upstream
   // Verificar compatibilidad y plataforma
   useEffect(() => {
     const checkCompatibility = async () => {
@@ -269,6 +293,17 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
     }
   };
 
+=======
+  // Detectar plataforma al montar el componente
+  useEffect(() => {
+    const platform = isNativePlatform() ? 'native' : 'web';
+    setCurrentPlatform(platform);
+  }, []);
+
+  // ===============================
+  // FUNCIONES DE ZOOM (solo para web)
+  // ===============================
+>>>>>>> Stashed changes
   const checkZoomSupport = (track: MediaStreamTrack): boolean => {
     try {
       const capabilities = track.getCapabilities();
@@ -291,6 +326,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
     setZoomLevel(level);
   };
 
+<<<<<<< Updated upstream
   const handleZoomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newZoom = parseFloat(event.target.value);
     simulateDigitalZoom(newZoom);
@@ -318,10 +354,83 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       await scanWithNativeCamera();
     } else {
       await scanWithHtml5Qr();
+=======
+  // ===============================
+  // IMPLEMENTACIÓN PARA WEB (Html5Qrcode)
+  // ===============================
+  const startWebScanning = async () => {
+    try {
+      setIsScanning(true);
+      const scanner = new Html5Qrcode("qr-reader");
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          } as any,
+        },
+        async (decodedText) => {
+          handleScanSuccess(decodedText);
+        },
+        (errorMessage) => {
+          // Error silencioso durante el escaneo
+        }
+      );
+
+      setTimeout(async () => {
+        try {
+          const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
+          if (videoElement && videoElement.srcObject) {
+            const stream = videoElement.srcObject as MediaStream;
+            const videoTrack = stream.getVideoTracks()[0];
+            videoTrackRef.current = videoTrack;
+
+            const zoomSupported = checkZoomSupport(videoTrack);
+            setSupportsZoom(zoomSupported);
+
+            if (zoomSupported) {
+              toast.success("Cámara activa - Zoom disponible");
+            } else {
+              toast.info("Cámara activa - Usando zoom digital");
+            }
+          }
+        } catch (error) {
+          console.log('Error checking zoom support');
+        }
+      }, 1000);
+
+      isScannerRunning.current = true;
+      setHasPermission(true);
+      toast.success("Cámara activa - Enfoca el QR dentro del recuadro");
+
+    } catch (err) {
+      setHasPermission(false);
+      setIsScanning(false);
+      scannerRef.current = null;
+      isScannerRunning.current = false;
+      videoTrackRef.current = null;
+      
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          toast.error("Permiso de cámara denegado");
+        } else if (err.name === 'NotFoundError') {
+          toast.error("No se encontró cámara trasera");
+        } else {
+          toast.error("No se pudo acceder a la cámara");
+        }
+      }
+>>>>>>> Stashed changes
     }
   };
 
-  const stopScanning = async () => {
+  const stopWebScanning = async () => {
     const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
     if (videoElement) {
       videoElement.style.transform = 'none';
@@ -349,6 +458,104 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
     setIsScanning(false);
     setSupportsZoom(false);
     setZoomLevel(1);
+<<<<<<< Updated upstream
+=======
+  };
+
+  // ===============================
+  // IMPLEMENTACIÓN PARA NATIVO (Capacitor BarcodeScanner)
+  // ===============================
+  const checkNativePermission = async (): Promise<boolean> => {
+    try {
+      const status = await BarcodeScanner.checkPermission({ force: true });
+      
+      if (status.granted) {
+        return true;
+      }
+      
+      if (status.denied) {
+        toast.error("Permiso de cámara denegado. Por favor, habilita los permisos en configuración.");
+        return false;
+      }
+      
+      // Solicitar permisos
+      const requestStatus = await BarcodeScanner.checkPermission({ force: true });
+      return requestStatus.granted;
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      return false;
+    }
+  };
+
+  const prepareNativeScanner = () => {
+    BarcodeScanner.hideBackground();
+    document.body.style.background = 'transparent';
+  };
+
+  const showAppContent = () => {
+    document.body.style.background = '';
+    BarcodeScanner.showBackground();
+  };
+
+  const startNativeScanning = async () => {
+    try {
+      const hasPerm = await checkNativePermission();
+      if (!hasPerm) {
+        setHasPermission(false);
+        return;
+      }
+
+      setHasPermission(true);
+      setIsScanning(true);
+      
+      prepareNativeScanner();
+      
+      const result = await BarcodeScanner.startScan();
+      
+      if (result.hasContent) {
+        await handleScanSuccess(result.content!);
+      } else {
+        // Usuario canceló el escaneo
+        stopNativeScanning();
+      }
+      
+    } catch (error) {
+      console.error('Error starting native scan:', error);
+      toast.error("Error al iniciar el escáner");
+      stopNativeScanning();
+    }
+  };
+
+  const stopNativeScanning = async () => {
+    try {
+      await BarcodeScanner.stopScan();
+      showAppContent();
+      setIsScanning(false);
+    } catch (error) {
+      console.error('Error stopping native scan:', error);
+      showAppContent();
+      setIsScanning(false);
+    }
+  };
+
+  // ===============================
+  // FUNCIONES UNIFICADAS
+  // ===============================
+  const startScanning = async () => {
+    if (currentPlatform === 'native') {
+      await startNativeScanning();
+    } else {
+      await startWebScanning();
+    }
+  };
+
+  const stopScanning = async () => {
+    if (currentPlatform === 'native') {
+      await stopNativeScanning();
+    } else {
+      await stopWebScanning();
+    }
+>>>>>>> Stashed changes
   };
 
   const handleScanSuccess = async (qrData: string) => {
@@ -406,6 +613,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
     }, 3000);
   };
 
+  // Cleanup al desmontar el componente
   useEffect(() => {
     return () => {
       stopScanning();
@@ -421,6 +629,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           <QrCode className="w-8 h-8 text-emerald-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Escanear QR</h1>
+<<<<<<< Updated upstream
         <p className="text-gray-500">
           {isNative 
             ? "Toca el botón para abrir la cámara y escanear el QR" 
@@ -450,10 +659,17 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
             <p className="text-blue-700 text-sm">
               Modo nativo activo - Usando cámara del dispositivo
             </p>
+=======
+        <p className="text-gray-500">Escanea el código QR del punto de reciclaje para ganar ecopoints</p>
+        {currentPlatform === 'native' && (
+          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            📱 Modo App Nativa
+>>>>>>> Stashed changes
           </div>
         )}
       </div>
 
+<<<<<<< Updated upstream
       {/* Solo mostrar el contenedor de cámara en web */}
       {!isNative && (
         <Card className="overflow-hidden border-2 border-gray-200">
@@ -466,7 +682,73 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
                   {hasPermission === false && (
                     <p className="text-yellow-400 text-sm">Permisos de cámara requeridos</p>
                   )}
+=======
+      <Card className="overflow-hidden border-2 border-gray-200">
+        <div className="relative aspect-square bg-gray-900">
+          {!isScanning && !showSuccess && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <Camera className="w-16 h-16 text-gray-400 mx-auto" />
+                <p className="text-gray-400">Toca el botón para iniciar el escaneo</p>
+                {currentPlatform === 'native' && (
+                  <p className="text-gray-500 text-sm">Usando escáner nativo del dispositivo</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Vista de escaneo WEB */}
+          {isScanning && currentPlatform === 'web' && (
+            <>
+              <div id="qr-reader" className="w-full h-full"></div>
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-emerald-400 rounded-lg">
+                  <motion.div
+                    className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 rounded-full"
+                    animate={{ top: ['0%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  />
+>>>>>>> Stashed changes
                 </div>
+                
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <QrCode className="w-16 h-16 text-emerald-400 mx-auto" />
+                    </motion.div>
+                    <p className="text-white font-medium">Escaneando código QR...</p>
+                    {!supportsZoom && isScanning && (
+                      <p className="text-yellow-300 text-sm">Usando zoom digital</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Vista de escaneo NATIVO activo */}
+          {isScanning && currentPlatform === 'native' && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <div className="text-center text-white space-y-6 p-8">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <QrCode className="w-24 h-24 text-emerald-400 mx-auto" />
+                </motion.div>
+                <div className="space-y-3">
+                  <h3 className="text-xl font-bold text-white">Escáner Nativo Activado</h3>
+                  <p className="text-emerald-200">La cámara se abrió en pantalla completa</p>
+                  <p className="text-sm text-gray-300">Escanea el código QR con la cámara de tu dispositivo</p>
+                </div>
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto"
+                />
               </div>
             )}
 
@@ -499,6 +781,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
               </div>
             )}
 
+<<<<<<< Updated upstream
             <AnimatePresence>
               {showSuccess && (
                 <motion.div
@@ -538,6 +821,10 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
 
       {/* Controles de zoom solo en web */}
       {!isNative && isScanning && (
+=======
+      {/* Control de Zoom (solo para web) */}
+      {isScanning && currentPlatform === 'web' && (
+>>>>>>> Stashed changes
         <Card className="p-4 bg-blue-50 border-blue-200">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -604,6 +891,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
             onClick={startScanning}
             disabled={showSuccess || isSupported === false || hasPermission === false}
           >
+<<<<<<< Updated upstream
             <CameraIcon className="w-6 h-6 mr-3" />
             {isSupported === false 
               ? "Navegador no compatible" 
@@ -613,6 +901,10 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
               ? "Abrir cámara para escanear QR"
               : "Iniciar escaneo con cámara"
             }
+=======
+            <Camera className="w-6 h-6 mr-3" />
+            Iniciar escaneo {currentPlatform === 'native' ? 'con App' : 'con cámara'}
+>>>>>>> Stashed changes
           </Button>
         ) : (
           <Button 
@@ -620,7 +912,11 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
             onClick={stopScanning}
           >
             <X className="w-6 h-6 mr-3" />
+<<<<<<< Updated upstream
             {isNative ? "Cancelar" : "Detener escaneo"}
+=======
+            {currentPlatform === 'native' ? 'Cerrar escáner' : 'Detener escaneo'}
+>>>>>>> Stashed changes
           </Button>
         )}
       </div>
@@ -628,6 +924,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       <Card className="p-4 bg-emerald-50 border-emerald-200">
         <div className="space-y-2">
           <p className="text-emerald-900 font-semibold">
+<<<<<<< Updated upstream
             {isNative ? "Instrucciones para APK:" : "Consejos:"}
           </p>
           <ul className="text-emerald-700 space-y-1 ml-4">
@@ -637,6 +934,17 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
                 <li>• Toma una foto del código QR</li>
                 <li>• La app procesará automáticamente el QR</li>
                 <li>• Asegúrate de tener buena iluminación</li>
+=======
+            Consejos para {currentPlatform === 'native' ? 'App' : 'Web'}:
+          </p>
+          <ul className="text-emerald-700 space-y-1 ml-4">
+            {currentPlatform === 'native' ? (
+              <>
+                <li>• El escáner abrirá en pantalla completa</li>
+                <li>• Mejor rendimiento y precisión</li>
+                <li>• Funciona sin conexión a internet</li>
+                <li>• Acepta automáticamente los permisos</li>
+>>>>>>> Stashed changes
               </>
             ) : (
               <>
@@ -646,9 +954,12 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
                 <li>• El zoom digital funciona en todos los dispositivos</li>
               </>
             )}
+<<<<<<< Updated upstream
             {hasPermission === false && (
               <li className="text-yellow-600 font-semibold">• Permite el acceso a la cámara en tu dispositivo</li>
             )}
+=======
+>>>>>>> Stashed changes
           </ul>
         </div>
       </Card>
