@@ -9,10 +9,7 @@ android {
 
 apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+    implementation project(':capacitor-community-barcode-scanner')
     implementation project(':capacitor-camera')
     implementation project(':capacitor-device')
     implementation project(':capacitor-geolocation')
@@ -22,22 +19,6 @@ dependencies {
     implementation project(':capacitor-splash-screen')
     implementation project(':capacitor-status-bar')
     implementation project(':capawesome-capacitor-android-edge-to-edge-support')
-=======
-    implementation project(':capacitor-community-barcode-scanner')
-    implementation project(':capacitor-camera')
->>>>>>> Stashed changes
-=======
-    implementation project(':capacitor-community-barcode-scanner')
-    implementation project(':capacitor-camera')
->>>>>>> Stashed changes
-=======
-    implementation project(':capacitor-community-barcode-scanner')
-    implementation project(':capacitor-camera')
->>>>>>> Stashed changes
-=======
-    implementation project(':capacitor-community-barcode-scanner')
-    implementation project(':capacitor-camera')
->>>>>>> Stashed changes
 
 }
 

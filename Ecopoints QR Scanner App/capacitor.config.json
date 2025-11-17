@@ -1,30 +1,12 @@
 {
-<<<<<<< Updated upstream
-  "appId": "com.ecoPoints.App",
-  "appName": "Ecopoints App",
-=======
   "appId": "com.ecopoints.qrscanner",
   "appName": "Ecopoints QR Scanner App",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   "webDir": "build",
   "server": {
     "androidScheme": "https",
     "hostname": "app.ecopoints.local"
   },
   "plugins": {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     "SplashScreen": {
       "launchShowDuration": 2000,
       "launchAutoHide": true,
@@ -43,7 +25,10 @@
           "alias": "camera",
           "reason": "Necesitamos acceso a la cámara para escanear los códigos QR de las estaciones de reciclaje."
         }
-      ]
+      ],
+      "saveToGallery": false,
+      "allowEditing": false,
+      "quality": 90
     },
     "Geolocation": {
       "permissions": [
@@ -55,18 +40,6 @@
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
-    }
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-    "Camera": {
-      "saveToGallery": false,
-      "allowEditing": false,
-      "quality": 90
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_icon_config_sample",
@@ -75,15 +48,5 @@
   },
   "android": {
     "allowMixedContent": true
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   }
 }
