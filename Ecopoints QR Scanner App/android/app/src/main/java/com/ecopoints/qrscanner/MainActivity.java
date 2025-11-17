@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
 <<<<<<<< Updated upstream:Ecopoints QR Scanner App/android/app/src/main/java/com/EcoPoints/App/MainActivity.java
 >>>>>>> Stashed changes
@@ -12,6 +13,9 @@ package com.ecopoints.qrscanner;
 ========
 package com.ecopoints.qrscanner;
 >>>>>>>> Stashed changes:Ecopoints QR Scanner App/android/app/src/main/java/com/ecopoints/qrscanner/MainActivity.java
+>>>>>>> Stashed changes
+=======
+package com.ecopoints.qrscanner;
 >>>>>>> Stashed changes
 
 import com.getcapacitor.BridgeActivity;

@@ -1,6 +1,7 @@
 {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   "name": "ecopoints",
   "private": true,
   "version": "0.0.0",
@@ -83,6 +84,8 @@
     "vite": "^4.4.5"
   }
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
       "name": "ecopoints-qr-scanner-app",
