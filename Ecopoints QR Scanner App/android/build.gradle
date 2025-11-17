@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.0'  // Versión compatible
+        classpath 'com.android.tools.build:gradle:8.3.2'  // Versión actualizada
         classpath 'com.google.gms:google-services:4.4.2'
     }
 }
@@ -15,6 +15,17 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+// Agregado para forzar una única versión de Kotlin en todo el proyecto
+subprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.startsWith('kotlin-stdlib')) {
+                details.useVersion '1.8.22'
+            }
+        }
     }
 }
 
