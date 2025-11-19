@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.3.2" type="incidents">
+
+    <incident
+        id="AndroidGradlePluginVersion"
+        severity="warning"
+        message="A newer version of com.android.tools.build:gradle than 8.7.2 is available: 8.13.1. (There is also a newer version of 8.7.𝑥 available, if upgrading to 8.13.1 is difficult: 8.7.3)">
+        <fix-alternatives>
+            <fix-replace
+                description="Change to 8.13.1"
+                family="Update versions"
+                oldString="8.7.2"
+                replacement="8.13.1"/>
+            <fix-replace
+                description="Change to 8.7.3"
+                family="Update versions"
+                robot="true"
+                independent="true"
+                oldString="8.7.2"
+                replacement="8.7.3"/>
+        </fix-alternatives>
+        <location
+            file="${:capacitor-cordova-android-plugins*projectDir}/build.gradle"
+            line="12"
+            column="9"
+            startOffset="371"
+            endLine="12"
+            endColumn="57"
+            endOffset="419"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.1">
+        <location
+            file="${:capacitor-cordova-android-plugins*projectDir}/build.gradle"
+            line="46"
+            column="20"
+            startOffset="1291"
+            endLine="46"
+            endColumn="76"
+            endOffset="1347"/>
+    </incident>
+
+</incidents>

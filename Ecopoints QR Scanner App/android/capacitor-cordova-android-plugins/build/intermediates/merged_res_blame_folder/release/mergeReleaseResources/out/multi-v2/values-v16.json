@@ -1,0 +1,72 @@
+{
+    "logs": [
+        {
+            "outputFile": "capacitor.cordova.android.plugins.capacitor-cordova-android-plugins-release-19:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\aries\\.gradle\\caches\\transforms-3\\3d27412cd2d4a75f6a3fc2b6ab8fabec\\transformed\\core-1.9.0\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\aries\\.gradle\\caches\\transforms-3\\ff7913b0f8c8b4cbea8f8f8dd68ef256\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "121",
+                        "endLines": "6",
+                        "endColumns": "12",
+                        "endOffsets": "289"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "capacitor.cordova.android.plugins.capacitor-cordova-android-plugins-mergeReleaseResources-17:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\aries\\.gradle\\caches\\transforms-3\\3d27412cd2d4a75f6a3fc2b6ab8fabec\\transformed\\core-1.9.0\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\aries\\.gradle\\caches\\transforms-3\\ff7913b0f8c8b4cbea8f8f8dd68ef256\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "121",
+                        "endLines": "6",
+                        "endColumns": "12",
+                        "endOffsets": "289"
+                    }
+                }
+            ]
+        }
+    ]
+}
