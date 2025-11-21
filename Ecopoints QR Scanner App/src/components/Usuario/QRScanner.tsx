@@ -4,70 +4,148 @@ import { Capacitor } from '@capacitor/core';
 import { Camera } from '@capacitor/camera';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus, Zap, ZapOff } from 'lucide-react';
+import { X, CheckCircle2, Camera as CameraIcon, Minus, Plus, Zap, ZapOff, Video, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 const sliderStyles = `
-  .zoom-slider::-webkit-slider-thumb {
-    appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #10b981;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  
-  .zoom-slider::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #10b981;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    box-sizing: border-box;
-  }
+.zoom-slider::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+height: 20px;
+width: 20px;
+border-radius: 50%;
+background: #10b981;
+cursor: pointer;
+border: 2px solid white;
+box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 
-  .zoom-slider::-webkit-slider-track {
-    background: #4b5563;
-    height: 8px;
-    border-radius: 4px;
-  }
+.zoom-slider::-moz-range-thumb {
+height: 20px;
+width: 20px;
+border-radius: 50%;
+background: #10b981;
+cursor: pointer;
+border: 2px solid white;
+box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+box-sizing: border-box;
+}
 
-  .zoom-slider::-moz-range-track {
-    background: #4b5563;
-    height: 8px;
-    border-radius: 4px;
-    border: none;
-  }
+.zoom-slider::-webkit-slider-track {
+background: #4b5563;
+height: 8px;
+border-radius: 4px;
+}
+
+.zoom-slider::-moz-range-track {
+background: #4b5563;
+height: 8px;
+border-radius: 4px;
+border: none;
+}
 `;
 
 interface QRScannerProps {
   onScanSuccess?: (transaction: { type: 'scan'; points: number; description: string; location?: string }) => void;
 }
 
+interface CameraDevice {
+  id: string;
+  label: string;
+}
+
+type PermissionStatus = 'checking' | 'granted' | 'denied' | 'idle';
+
 export function QRScanner({ onScanSuccess }: QRScannerProps) {
+  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('checking');
   const [isScanning, setIsScanning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [supportsZoom, setSupportsZoom] = useState(true);
-  const [permissionError, setPermissionError] = useState(false);
-  const [cameraInfo, setCameraInfo] = useState<string>('');
   const [isFlashOn, setIsFlashOn] = useState(false);
+
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>();
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScannerRunning = useRef(false);
   const videoTrackRef = useRef<MediaStreamTrack | null>(null);
-  
+
   const token = localStorage.getItem("token");
   const API_BASE = window.location.hostname === 'localhost' ? '/api' : 'https://ecopoints.hvd.lat/api';
 
-  const MIN_ZOOM = 1;
-  const MAX_ZOOM = 4;
-  const ZOOM_STEP = 0.5;
+  const MIN_ZOOM = 1, MAX_ZOOM = 4, ZOOM_STEP = 0.5;
+
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (Capacitor.isNativePlatform()) {
+        setPermissionStatus('idle');
+        return;
+      }
+      try {
+        const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (result.state === 'granted') {
+          setPermissionStatus('granted');
+        } else if (result.state === 'prompt') {
+          setPermissionStatus('idle');
+        } else {
+          setPermissionStatus('denied');
+        }
+        result.onchange = () => setPermissionStatus(result.state as PermissionStatus);
+      } catch (error) {
+        console.warn("Permissions API not supported, defaulting to 'idle'.", error);
+        setPermissionStatus('idle');
+      }
+    };
+    checkPermissions();
+  }, []);
+
+  useEffect(() => {
+    const getCameras = async () => {
+      if (cameras.length > 0) return;
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length) {
+          setCameras(devices);
+          const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear') || d.label.toLowerCase().includes('trasera'));
+          setSelectedCameraId(backCamera ? backCamera.id : devices[0].id);
+        }
+      } catch (err) {
+        console.error("Error getting cameras:", err);
+        toast.error("No se pudieron obtener las cámaras. Por favor, recarga la página.");
+      }
+    };
+    if (permissionStatus === 'granted') {
+      getCameras();
+    }
+  }, [permissionStatus, cameras.length]);
+
+  const requestCameraPermission = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Camera.requestPermissions({ permissions: ['camera'] });
+        if (permission.camera === 'granted') {
+          setPermissionStatus('granted');
+        } else {
+          setPermissionStatus('denied');
+          toast.error("Permiso de cámara denegado.");
+        }
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionStatus('granted');
+    } catch (err: any) {
+      console.error("Error requesting camera permission:", err);
+      if (err.name === 'NotAllowedError') {
+        toast.error("Has denegado el permiso para usar la cámara.");
+      } else {
+        toast.error("No se pudo obtener el permiso para la cámara.");
+      }
+      setPermissionStatus('denied');
+    }
+  };
 
   const getAuthHeaders = () => ({
     "Content-Type": "application/json",
@@ -76,409 +154,244 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
 
   const setTransparentBackground = (isTransparent: boolean) => {
     if (Capacitor.isNativePlatform()) {
-        document.body.style.backgroundColor = isTransparent ? 'transparent' : '';
-        document.getElementById('root')!.style.backgroundColor = isTransparent ? 'transparent' : '';
-    }
-  };
-
-  // FUNCIÓN MEJORADA: Zoom digital que se mantiene centrado
-  const applyDigitalZoom = (level: number) => {
-    const videoContainer = document.querySelector('#qr-reader') as HTMLElement;
-    const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
-    
-    if (videoContainer && videoElement) {
-      // Aplicar transformación al contenedor para mantener el centrado
-      videoContainer.style.transform = `scale(${level})`;
-      videoContainer.style.transformOrigin = 'center center';
-      videoContainer.style.overflow = 'hidden';
-      
-      // El video mantiene su tamaño original
-      videoElement.style.transform = 'none';
-      videoElement.style.width = '100%';
-      videoElement.style.height = '100%';
-      videoElement.style.objectFit = 'cover';
-    }
-    setZoomLevel(level);
-  };
-
-  const checkZoomSupport = (track: MediaStreamTrack): boolean => {
-    try {
-      const capabilities = track.getCapabilities();
-      const hasZoom = (capabilities as any).zoom !== undefined;
-      console.log("Capacidades de zoom nativo:", capabilities);
-      return hasZoom;
-    } catch (error) {
-      console.log("Zoom nativo no disponible");
-      return false;
-    }
-  };
-
-  const applyZoom = async (zoomValue: number) => {
-    if (!scannerRef.current || !isScannerRunning.current) {
-      console.log("No se puede aplicar zoom - scanner no activo");
-      return;
-    }
-
-    try {
-      console.log("Aplicando zoom a:", zoomValue);
-      
-      // Primero intentar zoom nativo si está disponible
-      if (videoTrackRef.current) {
-        const nativeZoomSupported = checkZoomSupport(videoTrackRef.current);
-        if (nativeZoomSupported) {
-          await scannerRef.current.applyVideoConstraints({ 
-            advanced: [{ zoom: zoomValue }] 
-          } as any);
-          console.log("Zoom nativo aplicado:", zoomValue);
-        } else {
-          // Si no hay zoom nativo, usar zoom digital
-          applyDigitalZoom(zoomValue);
-          console.log("Zoom digital aplicado:", zoomValue);
-        }
-      } else {
-        // Fallback a zoom digital
-        applyDigitalZoom(zoomValue);
-        console.log("Zoom digital aplicado (fallback):", zoomValue);
-      }
-      
-      setZoomLevel(zoomValue);
-      
-    } catch (error) {
-      console.warn("No se pudo aplicar zoom nativo, usando zoom digital:", error);
-      // Fallback a zoom digital
-      applyDigitalZoom(zoomValue);
+      document.body.style.backgroundColor = isTransparent ? 'transparent' : '';
+      document.getElementById('root')!.style.backgroundColor = isTransparent ? 'transparent' : '';
     }
   };
 
   const startScanning = async () => {
-  if (showSuccess) return;
-  setPermissionError(false);
-  setCameraInfo('');
-
-  try {
-    if (Capacitor.isNativePlatform()) {
-      const permission = await Camera.requestPermissions({ permissions: ['camera'] });
-      if (permission.camera !== 'granted') {
-        toast.error("Permiso de cámara denegado.");
-        setPermissionError(true);
-        return;
-      }
+    if (showSuccess || !selectedCameraId) {
+      toast.error("No hay una cámara seleccionada.");
+      return;
     }
-
     setTransparentBackground(true);
     setIsScanning(true);
 
-    const scanner = new Html5Qrcode("qr-reader", { 
-      verbose: false,
-      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-    });
+    const scanner = new Html5Qrcode("qr-reader", { verbose: false, formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] });
     scannerRef.current = scanner;
-    
+
+    // Configuración para el escáner QR
     const config = {
       fps: 10,
       qrbox: { width: 250, height: 250 },
       supportedformats: [Html5QrcodeSupportedFormats.QR_CODE],
-      videoConstraints: {
-        advanced: [
-          { focusMode: 'continuous' },
-          { whiteBalanceMode: 'continuous' }
-        ]
-      }
     };
 
-    console.log("Iniciando scanner con configuración simple...");
-
-    await scanner.start(
-      { facingMode: "environment" },
-      config,
-      (decodedText) => { 
-        console.log("QR detectado:", decodedText);
-        handleScanSuccess(decodedText); 
-      },
-      (errorMessage) => { 
-        if (!errorMessage.includes("NotFoundException")) {
-          console.log("Mensaje scanner:", errorMessage);
-        }
-      }
-    );
-
-    isScannerRunning.current = true;
-    console.log("Scanner iniciado");
-
-    setTimeout(() => {
-      if(scannerRef.current) {
-        setupZoom(scannerRef.current);
-      }
-    }, 1000);
-
-  } catch (err: any) {
-    console.error("Error en scanner:", err);
-    setIsScanning(false);
-    setTransparentBackground(false);
-    
-    if (err.name === 'NotAllowedError' || err.message?.includes('permission')) {
-      toast.error("Permiso de cámara denegado. Actívalo en los ajustes.");
-      setPermissionError(true);
-    } else {
-        if (err.message && err.message.includes('Requested device not found')) {
-            toast.error("No se encontró una cámara trasera.");
-        } else {
-            toast.error(`Error al iniciar cámara: ${err.message || 'Desconocido'}`);
-        }
-    }
-  }
-};
-
-
-  const setupZoom = async (scanner: Html5Qrcode) => {
     try {
-      // Obtener el track de video para verificar capacidades
+      await scanner.start(
+        selectedCameraId,
+        config,
+        (decodedText) => handleScanSuccess(decodedText),
+        (errorMessage) => { if (!errorMessage.includes("NotFoundException")) console.log("Scanner msg:", errorMessage); }
+      );
+      isScannerRunning.current = true;
+      setTimeout(() => { if (scannerRef.current) setupZoomAndFlash(); }, 500);
+    } catch (err: any) {
+      console.error("Scanner Start Error:", err);
+      setIsScanning(false);
+      setTransparentBackground(false);
+      toast.error(`Error al iniciar cámara: ${err.message || 'Desconocido'}`);
+    }
+  };
+
+  const setupZoomAndFlash = () => {
+    try {
       const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
       if (videoElement && videoElement.srcObject) {
         const stream = videoElement.srcObject as MediaStream;
-        const videoTrack = stream.getVideoTracks()[0];
-        videoTrackRef.current = videoTrack;
+        const track = stream.getVideoTracks()[0];
+        if (!track) return;
+        videoTrackRef.current = track;
 
-        const nativeZoomSupported = checkZoomSupport(videoTrack);
-        console.log("Zoom nativo soportado:", nativeZoomSupported);
-        
-        if (nativeZoomSupported) {
-          const settings = scanner.getRunningTrackSettings() as any;
-          const currentZoom = settings?.zoom || MIN_ZOOM;
-          setZoomLevel(currentZoom);
-          console.log("Zoom nativo configurado. Nivel actual:", currentZoom);
+        const capabilities = track.getCapabilities();
+        if (capabilities.zoom) {
+          const settings = track.getSettings();
+          setZoomLevel(settings.zoom || MIN_ZOOM);
         } else {
-          console.log("Usando zoom digital");
           applyDigitalZoom(MIN_ZOOM);
         }
+      } else {
+        applyDigitalZoom(MIN_ZOOM);
       }
     } catch (error) {
-      console.warn("Error al configurar zoom, usando zoom digital por defecto:", error);
+      console.warn("Error setting up zoom/flash:", error);
       applyDigitalZoom(MIN_ZOOM);
-    }
-  };
-  
-  const handleZoomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newZoom = parseFloat(event.target.value);
-    applyZoom(newZoom);
-  };
-
-  const increaseZoom = () => {
-    const newZoom = Math.min(zoomLevel + ZOOM_STEP, MAX_ZOOM);
-    applyZoom(newZoom);
-  };
-
-  const decreaseZoom = () => {
-    const newZoom = Math.max(zoomLevel - ZOOM_STEP, MIN_ZOOM);
-    applyZoom(newZoom);
-  };
-
-  const toggleFlash = async () => {
-    if (scannerRef.current && isScannerRunning.current && videoTrackRef.current) {
-      try {
-        const capabilities = videoTrackRef.current.getCapabilities() as any;
-        if (capabilities.torch) {
-          await scannerRef.current.applyVideoConstraints({
-            advanced: [{ torch: !isFlashOn }],
-          });
-          setIsFlashOn(!isFlashOn);
-        } else {
-            toast.info("El flash no está disponible en este dispositivo.");
-        }
-      } catch (error) {
-        console.error("Failed to toggle flash", error);
-        toast.error("No se pudo encender el flash.");
-      }
     }
   };
 
   const stopScanning = async () => {
-    console.log("Deteniendo scanner...");
     setTransparentBackground(false);
-    
-    // Resetear zoom digital
     const videoContainer = document.querySelector('#qr-reader') as HTMLElement;
-    if (videoContainer) {
-      videoContainer.style.transform = 'none';
-      videoContainer.style.overflow = 'visible';
-    }
+    if (videoContainer) videoContainer.style.transform = 'none';
 
-    if (videoTrackRef.current) {
-      videoTrackRef.current = null;
-    }
-
+    videoTrackRef.current = null;
     if (scannerRef.current && isScannerRunning.current) {
-      try { 
-        await scannerRef.current.stop(); 
-        console.log("Scanner detenido correctamente");
-      } 
-      catch (error) { 
-        console.warn("Error al detener scanner:", error); 
-      } 
-      finally { 
-        isScannerRunning.current = false; 
-        scannerRef.current = null; 
+      try { await scannerRef.current.stop(); }
+      catch (error) { console.warn("Error stopping scanner:", error); }
+      finally {
+        isScannerRunning.current = false;
+        scannerRef.current = null;
       }
     }
     setIsScanning(false);
     setZoomLevel(MIN_ZOOM);
+    setIsFlashOn(false);
   };
 
   const handleScanSuccess = async (qrData: string) => {
-    console.log("Procesando QR escaneado:", qrData);
     await stopScanning();
-    
     if (!token) {
-      toast.error("No estás autenticado."); 
+      toast.error("No estás autenticado.");
       return;
     }
-    
     try {
-      const response = await fetch(`${API_BASE}/validarQR`, { 
-        method: "POST", 
-        headers: getAuthHeaders(), 
-        body: JSON.stringify({ codigo_qr: qrData }) 
+      const response = await fetch(`${API_BASE}/validarQR`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ codigo_qr: qrData })
       });
-      
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
       const data = await response.json();
       const puntosGanados = data.puntos_obtenidos || 0;
       setEarnedPoints(puntosGanados);
       setShowSuccess(true);
-      
-      onScanSuccess?.({ 
-        type: 'scan', 
-        points: puntosGanados, 
-        description: data.mensaje || 'QR', 
-        location: data.ubicacion 
-      });
-      
+      onScanSuccess?.({ type: 'scan', points: puntosGanados, description: data.mensaje || 'QR', location: data.ubicacion });
       toast.success(`¡${data.mensaje || "Éxito"}! Ganaste ${puntosGanados} ecopoints 🎉`);
-      
     } catch (error) {
-      console.error("Error procesando QR:", error);
+      console.error("Error processing QR:", error);
       toast.error("Error al procesar el QR. Intenta nuevamente.");
     } finally {
       setTimeout(() => setShowSuccess(false), 3000);
     }
   };
 
-  useEffect(() => { 
-    return () => { 
-      stopScanning(); 
-    }; 
-  }, []);
+  const applyDigitalZoom = (level: number) => {
+    const videoContainer = document.querySelector('#qr-reader') as HTMLElement;
+    if (videoContainer) {
+      videoContainer.style.transform = `scale(${level})`;
+      videoContainer.style.transformOrigin = 'center center';
+      videoContainer.style.overflow = 'hidden';
+    }
+    setZoomLevel(level);
+  };
+
+  const applyZoom = async (zoomValue: number) => {
+    if (!videoTrackRef.current) return applyDigitalZoom(zoomValue);
+    try {
+      const capabilities = videoTrackRef.current.getCapabilities();
+      if (capabilities.zoom) {
+        await videoTrackRef.current.applyConstraints({ advanced: [{ zoom: zoomValue }] });
+        setZoomLevel(zoomValue);
+      } else {
+        applyDigitalZoom(zoomValue);
+      }
+    } catch (error) {
+      console.warn("Native zoom failed, using digital zoom:", error);
+      applyDigitalZoom(zoomValue);
+    }
+  };
+
+  const toggleFlash = async () => {
+    if (!videoTrackRef.current) return;
+    try {
+      const capabilities = videoTrackRef.current.getCapabilities();
+      if (capabilities.torch) {
+        await videoTrackRef.current.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
+        setIsFlashOn(!isFlashOn);
+      } else {
+        toast.info("El flash no está disponible en este dispositivo.");
+      }
+    } catch (error) {
+      console.error("Failed to toggle flash", error);
+      toast.error("No se pudo controlar el flash.");
+    }
+  };
+
+  useEffect(() => () => { void stopScanning(); }, []);
+
+  if (permissionStatus === 'checking') {
+    return (
+      <div className="p-6 text-center text-gray-500"><p>Comprobando permisos de cámara...</p></div>
+    );
+  }
+
+  if (permissionStatus !== 'granted') {
+    return (
+      <div className="p-6 space-y-6 flex flex-col items-center justify-center text-center">
+        <Card className="w-full max-w-md p-8 bg-white border rounded-lg shadow-sm">
+          <ShieldAlert className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Permiso de Cámara Requerido</h2>
+          <p className="text-gray-600 mb-6">
+            {permissionStatus === 'denied'
+              ? "Has bloqueado el acceso a la cámara. Para continuar, por favor habilita el permiso en la configuración de tu navegador o dispositivo."
+              : "Necesitamos tu permiso para acceder a la cámara y poder escanear los códigos QR."
+            }
+          </p>
+          <Button
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-semibold"
+            onClick={requestCameraPermission}
+            disabled={permissionStatus === 'denied'}
+          >
+            <CameraIcon className="w-6 h-6 mr-3" />
+            Habilitar Cámara
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
       <style>{sliderStyles}</style>
 
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
-          <QrCode className="w-8 h-8 text-emerald-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Escanear QR</h1>
-        <p className="text-gray-500">Escanea el código QR del punto de reciclaje para ganar ecopoints</p>
-        
-        {cameraInfo && (
-          <div className="mt-2 p-2 bg-blue-100 border border-blue-300 rounded-lg">
-            <p className="text-blue-700 text-xs font-medium">{cameraInfo}</p>
-            <p className="text-blue-600 text-xs mt-1">✓ Cámara trasera detectada</p>
-          </div>
-        )}
-        
-        {permissionError && (
-          <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
-            <p className="text-yellow-700 text-sm">
-              Permiso de cámara denegado. Habilítalo en los ajustes de la app y reiníciala.
-            </p>
-          </div>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900">Escanear QR</h1>
+        <p className="text-gray-500">Apunta la cámara al código QR para ganar ecopoints</p>
       </div>
 
-      {/* DISEÑO MEJORADO - Similar al segundo código pero manteniendo tu estructura */}
       <Card className="overflow-hidden border-2 border-gray-200">
         <div className="relative aspect-square bg-gray-900">
           {!isScanning && !showSuccess && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <CameraIcon className="w-16 h-16 text-gray-400 mx-auto" />
-                <p className="text-gray-400">Toca el botón para iniciar el escaneo</p>
-                {permissionError && (
-                  <p className="text-yellow-400 text-sm">Permisos de cámara requeridos</p>
-                )}
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-10">
+              {cameras.length === 0 ? (
+                <p className="text-gray-400">Buscando cámaras...</p>
+              ) : (
+                <div className="text-center space-y-4">
+                  <CameraIcon className="w-16 h-16 text-gray-400 mx-auto" />
+                  <p className="text-gray-400">Cámara lista para escanear</p>
+                </div>
+              )}
             </div>
           )}
-
           <div id="qr-reader" className={`w-full h-full ${isScanning ? '' : 'hidden'}`}></div>
-
           {isScanning && (
-            <div className="absolute top-4 right-4 z-30 pointer-events-auto">
-              <Button
-                size="icon"
-                onClick={toggleFlash}
-                className="bg-black/50 hover:bg-black/70 text-white rounded-full w-12 h-12"
-              >
-                {isFlashOn ? <ZapOff className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
-              </Button>
-            </div>
-          )}
-
-          {isScanning && (
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Marco de escaneo del segundo código */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-emerald-400 rounded-lg">
+            <>
+              <div className="absolute top-4 right-4 z-30">
+                <Button size="icon" onClick={toggleFlash} className="bg-black/50 hover:bg-black/70 text-white rounded-full w-12 h-12">
+                  {isFlashOn ? <ZapOff className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
+                </Button>
+              </div>
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                <div className="w-64 h-64 border-4 border-emerald-400/70 rounded-2xl shadow-lg" />
                 <motion.div
-                  className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 rounded-full"
-                  animate={{ top: ['0%', '100%'] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  className="absolute w-64 h-1 bg-emerald-300 rounded-full"
+                  animate={{ top: '30%', opacity: [0, 1, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                 />
               </div>
-              
-              {/* Overlay de escaneo del segundo código */}
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <div className="text-center space-y-3">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <QrCode className="w-16 h-16 text-emerald-400 mx-auto" />
-                  </motion.div>
-                  <p className="text-white font-medium">Escaneando código QR...</p>
-                </div>
-              </div>
-            </div>
+            </>
           )}
-
           <AnimatePresence>
             {showSuccess && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }} 
-                animate={{ opacity: 1, scale: 1 }} 
-                exit={{ opacity: 0, scale: 0.8 }} 
-                className="absolute inset-0 bg-emerald-600 flex items-center justify-center z-20"
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute inset-0 bg-emerald-600 flex items-center justify-center z-40">
                 <div className="text-center text-white space-y-4">
-                  <motion.div 
-                    initial={{ scale: 0, rotate: -180 }} 
-                    animate={{ scale: 1, rotate: 0 }} 
-                    transition={{ type: 'spring', stiffness: 200 }}
-                  >
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
                     <CheckCircle2 className="w-20 h-20 mx-auto" />
                   </motion.div>
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-2">¡Escaneo exitoso!</h2>
                     <p className="text-emerald-100 mb-4">Has ganado</p>
-                    <motion.p 
-                      initial={{ scale: 0 }} 
-                      animate={{ scale: 1 }} 
-                      transition={{ delay: 0.3, type: 'spring', stiffness: 200 }} 
-                      className="text-white text-5xl font-bold"
-                    >
-                      +{earnedPoints}
-                    </motion.p>
+                    <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 200 }} className="text-white text-5xl font-bold">+{earnedPoints}</motion.p>
                     <p className="text-emerald-100 mt-2">ecopoints</p>
                   </div>
                 </div>
@@ -488,78 +401,62 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
         </div>
       </Card>
 
-      {/* CONTROLES DE ZOOM CON DISEÑO MEJORADO */}
-      {isScanning && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-700">
-                Control de Zoom
-              </span>
-              <span className="text-sm font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                {zoomLevel.toFixed(1)}x
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Button
-                size="sm"
-                onClick={decreaseZoom}
-                disabled={zoomLevel <= MIN_ZOOM}
-                variant="outline"
-                className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
+      {!isScanning && (
+        <Card className="p-4 bg-white border rounded-lg shadow-sm">
+          <div className="space-y-2">
+            <label htmlFor="camera-select" className="block text-sm font-semibold text-gray-800">Seleccionar Cámara</label>
+            <div className="relative flex items-center">
+              <Video className="absolute left-3 w-5 h-5 text-gray-500 pointer-events-none" />
+              <select
+                id="camera-select"
+                value={selectedCameraId || ''}
+                onChange={(e) => setSelectedCameraId(e.target.value)}
+                disabled={cameras.length === 0}
+                className="block w-full pl-10 pr-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                aria-label="Seleccionar cámara"
               >
-                <Minus className="w-4 h-4" />
-              </Button>
-              
-              <div className="flex-1">
-                <input
-                  type="range"
-                  min={MIN_ZOOM}
-                  max={MAX_ZOOM}
-                  step={0.1}
-                  value={zoomLevel}
-                  onChange={handleZoomChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer zoom-slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, #e5e7eb ${((zoomLevel - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
-              </div>
-              
-              <Button
-                size="sm"
-                onClick={increaseZoom}
-                disabled={zoomLevel >= MAX_ZOOM}
-                variant="outline"
-                className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex justify-between text-xs text-blue-600">
-              <span>{MIN_ZOOM}x</span>
-              <span className="font-medium">Zoom digital</span>
-              <span>{MAX_ZOOM}x</span>
+                {cameras.length === 0 ? (
+                  <option>Cargando cámaras...</option>
+                ) : (
+                  cameras.map(camera => (
+                    <option key={camera.id} value={camera.id}>{camera.label || `Cámara ${camera.id.substring(0, 6)}`}</option>
+                  ))
+                )}
+              </select>
             </div>
           </div>
         </Card>
       )}
 
-      <div className="space-y-3">
+      {isScanning && (
+        <Card className="p-4 bg-gray-800 border-gray-700">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-200">Control de Zoom</span>
+              <span className="text-sm font-bold text-white bg-gray-700 px-2 py-1 rounded">{zoomLevel.toFixed(1)}x</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button size="icon" onClick={() => applyZoom(Math.max(zoomLevel - ZOOM_STEP, MIN_ZOOM))} disabled={zoomLevel <= MIN_ZOOM} variant="outline" className="border-gray-600 text-white hover:bg-gray-700 h-10 w-10"><Minus className="w-5 h-5" /></Button>
+              <input type="range" min={MIN_ZOOM} max={MAX_ZOOM} step={0.1} value={zoomLevel} onChange={(e) => applyZoom(parseFloat(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer zoom-slider"/>
+              <Button size="icon" onClick={() => applyZoom(Math.min(zoomLevel + ZOOM_STEP, MAX_ZOOM))} disabled={zoomLevel >= MAX_ZOOM} variant="outline" className="border-gray-600 text-white hover:bg-gray-700 h-10 w-10"><Plus className="w-5 h-5" /></Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <div className="space-y-3 pt-2">
         {!isScanning ? (
-          <Button 
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-semibold transition-colors duration-200" 
-            onClick={startScanning} 
-            disabled={showSuccess || permissionError}
+          <Button
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-semibold"
+            onClick={startScanning}
+            disabled={showSuccess || cameras.length === 0}
           >
             <CameraIcon className="w-6 h-6 mr-3" />
-            {permissionError ? "Permiso denegado" : "Iniciar escaneo con cámara"}
+            Iniciar escaneo
           </Button>
         ) : (
-          <Button 
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg font-semibold transition-colors duration-200" 
+          <Button
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg font-semibold"
             onClick={stopScanning}
           >
             <X className="w-6 h-6 mr-3" />
@@ -567,19 +464,6 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           </Button>
         )}
       </div>
-
-      {/* CARD DE CONSEJOS MEJORADO */}
-      <Card className="p-4 bg-emerald-50 border-emerald-200">
-        <div className="space-y-2">
-          <p className="text-emerald-900 font-semibold text-sm">Consejos para mejor escaneo:</p>
-          <ul className="text-emerald-700 text-xs space-y-1 ml-4">
-            <li>• Usa la barra de zoom para acercar o alejar la imagen</li>
-            <li>• Mantén el QR dentro del cuadro verde</li>
-            <li>• Asegúrate de tener buena iluminación</li>
-            <li>• El zoom digital funciona en todos los dispositivos</li>
-          </ul>
-        </div>
-      </Card>
     </div>
   );
 }
