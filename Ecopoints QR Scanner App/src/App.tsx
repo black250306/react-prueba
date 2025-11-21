@@ -141,16 +141,14 @@ export default function App() {
     <div className="app-main-container bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <PushNotificationsHandler />
 
-      <div className="max-w-md mx-auto h-screen flex flex-col shadow-xl dark:shadow-gray-900 bg-white dark:bg-gray-900">
+      <div className="max-w-md mx-auto h-screen flex flex-col bg-white dark:bg-gray-900 shadow-xl">
         
-        <div className="flex-grow overflow-y-auto safe-top">
+        <main className="flex-grow overflow-y-auto safe-top">
           {renderView()}
-        </div>
+        </main>
 
-        <div className="nav-container bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-          <BottomNav currentView={currentView} onNavigate={setCurrentView} />
-        </div>
-
+        <BottomNav currentView={currentView} onNavigate={setCurrentView} />
+        
       </div>
 
       <Toaster />
