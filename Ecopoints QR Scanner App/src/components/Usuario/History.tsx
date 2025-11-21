@@ -41,7 +41,7 @@ export function History() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 pb-24 space-y-4">
       <h1 className="text-xl font-semibold text-gray-900">Historial de actividad</h1>
       {transactions.length === 0 ? (
         <p className="text-gray-500">No hay actividades registradas aún.</p>

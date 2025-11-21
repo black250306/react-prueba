@@ -138,26 +138,22 @@ export default function App() {
     );
 
   return (
-    <>
-      
+    <div className="app-main-container bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
+      <PushNotificationsHandler />
 
-      <div className="app-main-container bg-gradient-to-b from-emerald-50 dark:from-gray-900 dark:to-gray-800">
-        <PushNotificationsHandler />
-
-        <div className="max-w-md mx-auto h-full flex flex-col shadow-xl dark:shadow-gray-900 bg-white dark:bg-gray-900 relative">
-          
-          <div className="scrollable-container safe-top pb-16">
-            {renderView()}
-          </div>
-
-
-          <div className="nav-container bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-            <BottomNav currentView={currentView} onNavigate={setCurrentView} />
-          </div>
+      <div className="max-w-md mx-auto h-screen flex flex-col shadow-xl dark:shadow-gray-900 bg-white dark:bg-gray-900">
+        
+        <div className="flex-grow overflow-y-auto safe-top">
+          {renderView()}
         </div>
 
-        <Toaster />
+        <div className="nav-container bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+          <BottomNav currentView={currentView} onNavigate={setCurrentView} />
+        </div>
+
       </div>
-    </>
+
+      <Toaster />
+    </div>
   );
 }
