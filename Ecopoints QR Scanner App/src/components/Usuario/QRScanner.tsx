@@ -1,48 +1,43 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Capacitor } from '@capacitor/core';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus } from 'lucide-react';
+import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CameraPreview } from '@capacitor-community/camera-preview';
 import { toast } from 'sonner';
-import { useCameraPermission } from '../../hooks/useCameraPermission'; // Importar el hook
+import { useCameraPermission } from '../../hooks/useCameraPermission';
 
 const sliderStyles = `
-  .zoom-slider::-webkit-slider-thumb {
+  .zoom-slider {
+    -webkit-appearance: none;
     appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: #10b981;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0; /* bg-gray-200 */
+    border-radius: 9999px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
   }
-  
+  .zoom-slider:hover {
+    opacity: 1;
+  }
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #10b981; /* bg-emerald-600 */
+    cursor: pointer;
+    border-radius: 50%;
+  }
   .zoom-slider::-moz-range-thumb {
-    height: 20px;
     width: 20px;
-    border-radius: 50%;
-    background: #10b981;
+    height: 20px;
+    background: #10b981; /* bg-emerald-600 */
     cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    box-sizing: border-box;
-  }
-
-  .zoom-slider::-webkit-slider-track {
-    background: #bec0c3ff;
-    height: 8px;
-    border-radius: 4px;
-  }
-
-  .zoom-slider::-moz-range-track {
-    background: #4b5563;
-    height: 8px;
-    border-radius: 4px;
-    border: none;
+    border-radius: 50%;
   }
 `;
 
@@ -51,258 +46,156 @@ interface QRScannerProps {
 }
 
 export function QRScanner({ onScanSuccess }: QRScannerProps) {
-  const isNative = Capacitor.isNativePlatform();
   const [isScanning, setIsScanning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [cameraInfo, setCameraInfo] = useState<string>('');
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const isScannerRunning = useRef(false);
-  const videoTrackRef = useRef<MediaStreamTrack | null>(null);
-  const [torchOn, setTorchOn] = useState(false);
 
-  // Usar el hook de permisos
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoTrackRef = useRef<MediaStreamTrack | null>(null);
+
   const { permissionStatus, requestPermission } = useCameraPermission();
   const permissionDenied = permissionStatus === 'denied';
 
-  const token = localStorage.getItem("token");
-  const API_BASE = window.location.hostname === 'localhost' ? '/api' : 'https://ecopoints.hvd.lat/api';
+  const isNative = useMemo(() => Capacitor.isNativePlatform(), []);
+  const token = useMemo(() => localStorage.getItem("token"), []);
+  const API_BASE = useMemo(() => window.location.hostname === 'localhost' ? '/api' : 'https://ecopoints.hvd.lat/api', []);
 
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 4;
-  const ZOOM_STEP = 0.5;
 
-  const getAuthHeaders = () => ({
+  const getAuthHeaders = useCallback(() => ({
     "Content-Type": "application/json",
     "Authorization": `Bearer ${token}`
-  });
+  }), [token]);
 
-  const setTransparentBackground = (isTransparent: boolean) => {
-    if (Capacitor.isNativePlatform()) {
+  const setBodyTransparent = (isTransparent: boolean) => {
+    if (isNative) {
       document.body.style.backgroundColor = isTransparent ? 'transparent' : '';
       document.getElementById('root')!.style.backgroundColor = isTransparent ? 'transparent' : '';
     }
   };
 
-  const applyDigitalZoom = (level: number) => {
-    const videoContainer = document.querySelector('#qr-reader') as HTMLElement;
-    const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
-
-    if (videoContainer && videoElement) {
-      videoContainer.style.transform = `scale(${level})`;
-      videoContainer.style.transformOrigin = 'center center';
-      videoContainer.style.overflow = 'hidden';
-
-      videoElement.style.transform = 'none';
-      videoElement.style.width = '100%';
-      videoElement.style.height = '100%';
-      videoElement.style.objectFit = 'cover';
-    }
-    setZoomLevel(level);
-  };
-
-  const checkZoomSupport = (track: MediaStreamTrack): boolean => {
+  const applyZoom = useCallback(async (zoomValue: number) => {
+    if (!videoTrackRef.current?.getCapabilities) return;
     try {
-      const capabilities = track.getCapabilities();
-      return (capabilities as any).zoom !== undefined;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const applyZoom = async (zoomValue: number) => {
-    if (!scannerRef.current || !isScannerRunning.current) return;
-
-    try {
-      if (videoTrackRef.current && checkZoomSupport(videoTrackRef.current)) {
-        await scannerRef.current.applyVideoConstraints({
-          advanced: [{ zoom: zoomValue }]
-        } as any);
-      } else {
-        applyDigitalZoom(zoomValue);
-      }
-      setZoomLevel(zoomValue);
-    } catch (error) {
-      console.warn("No se pudo aplicar zoom nativo, usando zoom digital:", error);
-      applyDigitalZoom(zoomValue);
-    }
-  };
-
-  // --- FUNCIÓN DE ESCANEO REFACTORIZADA ---
-  const startScanning = async () => {
-    if (showSuccess) return;
-    setCameraInfo('');
-
-    // 1. Usar el hook para solicitar permiso
-    const currentPermission = await requestPermission();
-    if (currentPermission !== 'granted') {
-        toast.error("Debes permitir el acceso a la cámara para escanear.");
-        // El estado 'permissionDenied' del hook ya actualizará la UI
-        return;
-    }
-
-    try {
-      // 2. Si el permiso está concedido, continuar con el escaneo
-      const cameras = await Html5Qrcode.getCameras();
-      if (!cameras || cameras.length === 0) throw new Error("No se encontraron cámaras.");
-
-      let selectedCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('trasera')) || cameras[0];
-      setCameraInfo(`Cámara: ${selectedCamera.label}`);
-
-      setTransparentBackground(true);
-      setIsScanning(true);
-
-      const scanner = new Html5Qrcode("qr-reader", {
-        verbose: false,
-        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-      });
-      scannerRef.current = scanner;
-
-      const config: any = {
-        fps: 10,
-        qrbox: (w: number, h: number) => ({ width: Math.min(w, h) * 0.7, height: Math.min(w, h) * 0.7 }),
-        supportedFormats: [Html5QrcodeSupportedFormats.QR_CODE],
-        aspectRatio: 1.0,
-      };
-
-      if (isNative) {
-        config.videoConstraints = {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: { exact: "environment" },
-          advanced: [{ zoom: MIN_ZOOM }]
-        };
-      }
-
-      await scanner.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => handleScanSuccess(decodedText),
-        (errorMessage) => {
-          if (!errorMessage.includes("NotFoundException")) {
-            console.log("Scanner:", errorMessage);
-          }
-        }
-      );
-
-      isScannerRunning.current = true;
-      setTimeout(() => setupZoom(scanner), 800);
-
-    } catch (err: any) {
-      console.error("Error al iniciar scanner:", err);
-      setIsScanning(false);
-      setTransparentBackground(false);
-
-      if (err.name === 'NotAllowedError') {
-        toast.error("Permiso de cámara denegado.");
-      } else {
-        toast.error(`Error: ${err.message || 'Cámara no disponible'}`);
-      }
-    }
-  };
-
-  const setupZoom = async (scanner: Html5Qrcode) => {
-    try {
-      const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
-      if (videoElement && videoElement.srcObject) {
-        const stream = videoElement.srcObject as MediaStream;
-        const videoTrack = stream.getVideoTracks()[0];
-        videoTrackRef.current = videoTrack;
-
-        if (checkZoomSupport(videoTrack)) {
-          const settings = scanner.getRunningTrackSettings() as any;
-          setZoomLevel(settings?.zoom || MIN_ZOOM);
-        } else {
-          applyDigitalZoom(MIN_ZOOM);
-        }
+      const capabilities = videoTrackRef.current.getCapabilities();
+      if ('zoom' in capabilities) {
+        await videoTrackRef.current.applyConstraints({ advanced: [{ zoom: zoomValue }] } as any);
+        setZoomLevel(zoomValue);
       }
     } catch (error) {
-      console.warn("Error al configurar zoom, usando zoom digital por defecto:", error);
-      applyDigitalZoom(MIN_ZOOM);
+      console.warn("Zoom nativo no disponible:", error);
     }
+  }, []);
+
+  const handleZoomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newZoom = parseFloat(event.target.value);
+    setZoomLevel(newZoom);
+    applyZoom(newZoom);
   };
 
-  const toggleFlash = async () => {
-    if (!isNative) {
-      toast.info("El flash solo está disponible en la app.");
-      return;
-    }
-    try {
-      await CameraPreview.setFlashMode({ flashMode: torchOn ? 'off' : 'on' });
-      setTorchOn(prev => !prev);
-    } catch (error) {
-      toast.error("El flash no es compatible en este dispositivo.");
-    }
-  };
-
-  const handleZoomChange = (event: React.ChangeEvent<HTMLInputElement>) => applyZoom(parseFloat(event.target.value));
-  const increaseZoom = () => applyZoom(Math.min(zoomLevel + ZOOM_STEP, MAX_ZOOM));
-  const decreaseZoom = () => applyZoom(Math.max(zoomLevel - ZOOM_STEP, MIN_ZOOM));
-
-  const stopScanning = async () => {
-    console.log("Deteniendo scanner...");
-    setTransparentBackground(false);
-
-    const videoContainer = document.querySelector('#qr-reader') as HTMLElement;
-    if (videoContainer) {
-      videoContainer.style.transform = 'none';
-      videoContainer.style.overflow = 'visible';
-    }
-    if (videoTrackRef.current) videoTrackRef.current = null;
-
-    if (scannerRef.current && isScannerRunning.current) {
-      try {
-        await scannerRef.current.stop();
-      } catch (error) {
-        console.warn("Error al detener scanner:", error);
-      } finally {
-        isScannerRunning.current = false;
-        scannerRef.current = null;
-      }
-    }
+  const stopScanning = useCallback(async () => {
     setIsScanning(false);
-    setZoomLevel(MIN_ZOOM);
-  };
+    setBodyTransparent(false);
 
-  const handleScanSuccess = async (qrData: string) => {
-    console.log("Procesando QR escaneado:", qrData);
+    const currentScanner = scannerRef.current;
+    if (currentScanner) {
+      scannerRef.current = null; // Evita race conditions
+      try {
+        if (currentScanner.isScanning) {
+          await currentScanner.stop();
+        }
+      } catch (error) {
+        console.error("Error al detener el escáner (puede que ya estuviera detenido):", error);
+      }
+    }
+
+    if (videoTrackRef.current) {
+      videoTrackRef.current = null;
+    }
+  }, [isNative]);
+
+  const handleScanSuccess = useCallback(async (qrData: string) => {
     await stopScanning();
-
     if (!token) {
       toast.error("No estás autenticado.");
       return;
     }
-
     try {
       const response = await fetch(`${API_BASE}/validarQR`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ codigo_qr: qrData })
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
       const data = await response.json();
       const puntosGanados = data.puntos_obtenidos || 0;
       setEarnedPoints(puntosGanados);
       setShowSuccess(true);
-      onScanSuccess?.({
-        type: 'scan',
-        points: puntosGanados,
-        description: data.mensaje || 'QR',
-        location: data.ubicacion
-      });
+      onScanSuccess?.({ type: 'scan', points: puntosGanados, description: data.mensaje || 'QR', location: data.ubicacion });
       toast.success(`¡${data.mensaje || "Éxito"}! Ganaste ${puntosGanados} ecopoints 🎉`);
-    } catch (error) {
-      console.error("Error procesando QR:", error);
-      toast.error("Error al procesar el QR. Intenta nuevamente.");
-    } finally {
       setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error: any) {
+      console.error("Error procesando QR:", error);
+      toast.error(error.message || "Error al procesar el QR. Intenta nuevamente.");
+    }
+  }, [stopScanning, token, onScanSuccess, API_BASE, getAuthHeaders]);
+
+  const startScanning = async () => {
+    if (isScanning || showSuccess) return;
+
+    const perm = await requestPermission();
+    if (perm !== 'granted') {
+      return;
+    }
+
+    setBodyTransparent(true);
+
+    scannerRef.current = new Html5Qrcode("qr-reader", {
+        verbose: false,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+    });
+
+    const videoConstraints = {
+      facingMode: "environment",
+      advanced: [
+        { focusMode: "continuous" },
+        { exposureMode: "continuous" },
+        { whiteBalanceMode: "continuous" }
+      ]
+    };
+
+    try {
+        await scannerRef.current.start(
+            videoConstraints as MediaTrackConstraints,
+            { fps: 10, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.7, height: Math.min(w, h) * 0.7 }), aspectRatio: 1.0 },
+            (decodedText) => { handleScanSuccess(decodedText); },
+            (errorMessage) => { /* Ignorar errores comunes */ }
+        );
+
+        setIsScanning(true);
+
+        const videoElem = document.getElementById('qr-reader')?.querySelector('video');
+        if (videoElem?.srcObject) {
+            const stream = videoElem.srcObject as MediaStream;
+            videoTrackRef.current = stream.getVideoTracks()[0];
+            applyZoom(zoomLevel);
+        }
+    } catch (err: any) {
+      console.error("Error al iniciar el escáner:", err);
+      toast.error(err.message || 'No se pudo iniciar la cámara.');
+      await stopScanning();
     }
   };
 
+
   useEffect(() => {
     return () => { stopScanning(); };
-  }, []);
+  }, [stopScanning]);
 
   return (
     <div className="p-6 space-y-6">
@@ -313,60 +206,47 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
           <QrCode className="w-8 h-8 text-emerald-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Escanear QR</h1>
-        <p className="text-gray-500">Escanea el código QR del punto de reciclaje para ganar ecopoints</p>
-
-        {cameraInfo && (
-          <div className="mt-2 p-2 bg-blue-100 border border-blue-300 rounded-lg">
-            <p className="text-blue-700 text-xs font-medium">{cameraInfo}</p>
-            <p className="text-blue-600 text-xs mt-1">✓ Cámara trasera detectada</p>
-          </div>
-        )}
-
-        {permissionDenied && (
-          <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
-            <p className="text-yellow-700 text-sm">
-              Permiso de cámara denegado. Habilítalo en los ajustes de la app y reiníciala.
-            </p>
-          </div>
-        )}
+        <p className="text-gray-500">Gana ecopoints escaneando el QR del punto de reciclaje</p>
       </div>
+
+      {permissionDenied && (
+          <Card className="p-4 bg-yellow-50 border-yellow-300">
+            <div className="flex items-start">
+              <AlertTriangle className="h-6 w-6 text-yellow-500 mr-3 flex-shrink-0" />
+              <div className="flex-grow">
+                <h3 className="font-semibold text-yellow-800">Permiso de Cámara Requerido</h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Has denegado el permiso para usar la cámara. Para escanear, necesitas habilitarlo manualmente.
+                </p>
+                <p className="text-sm text-yellow-700 mt-2">
+                  Por favor, ve a <span className="font-semibold">Ajustes &gt; Aplicaciones &gt; Ecopoints &gt; Permisos</span> y activa la cámara.
+                </p>
+              </div>
+            </div>
+          </Card>
+      )}
 
       <Card className="overflow-hidden border-2 border-gray-200">
         <div className="relative aspect-square bg-gray-900">
           {!isScanning && !showSuccess && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center space-y-4">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                 <CameraIcon className="w-16 h-16 text-gray-400 mx-auto" />
-                <p className="text-gray-400">Toca el botón para iniciar el escaneo</p>
-                {permissionDenied && (
-                  <p className="text-yellow-400 text-sm">Permisos de cámara requeridos</p>
-                )}
-              </div>
+                <p className="text-gray-400 mt-4">
+                    {permissionDenied ? 'Permiso de cámara bloqueado' : 'Toca el botón para iniciar el escaneo'}
+                </p>
             </div>
           )}
 
           <div id="qr-reader" className={`w-full h-full ${isScanning ? '' : 'hidden'}`}></div>
 
           {isScanning && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-emerald-400 rounded-lg">
-                <motion.div
-                  className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 rounded-full"
-                  animate={{ top: ['0%', '100%'] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                />
-              </div>
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <div className="text-center space-y-3">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <QrCode className="w-16 h-16 text-emerald-400 mx-auto" />
-                  </motion.div>
-                  <p className="text-white font-medium">Escaneando código QR...</p>
-                </div>
-              </div>
+            <div className="absolute inset-0 pointer-events-none border-8 border-emerald-500/50 rounded-lg">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] border-2 border-dashed border-white/70 rounded-lg"/>
+              <motion.div
+                className="absolute top-0 left-0 right-0 h-1 bg-emerald-400"
+                animate={{ top: ['-2%', '102%'] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              />
             </div>
           )}
 
@@ -386,73 +266,38 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
                   >
                     <CheckCircle2 className="w-20 h-20 mx-auto" />
                   </motion.div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">¡Escaneo exitoso!</h2>
-                    <p className="text-emerald-100 mb-4">Has ganado</p>
-                    <motion.p
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-                      className="text-white text-5xl font-bold"
-                    >
-                      +{earnedPoints}
-                    </motion.p>
-                    <p className="text-emerald-100 mt-2">ecopoints</p>
-                  </div>
+                  <h2 className="text-2xl font-bold">¡Escaneo exitoso!</h2>
+                  <p>Has ganado</p>
+                  <motion.p
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+                    className="text-5xl font-bold"
+                  >
+                    +{earnedPoints}
+                  </motion.p>
+                  <p>ecopoints</p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </Card>
-
+      
       {isScanning && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-sm font-medium text-blue-700">Flash</span>
-              <Button
-                size="sm"
-                onClick={toggleFlash}
-                variant={torchOn ? "default" : "outline"}
-                className={`flex-shrink-0 ${torchOn ? "bg-yellow-400 text-black hover:bg-yellow-500" : "border-blue-300 text-blue-700 hover:bg-blue-100"}`}
-              >
-                {torchOn ? "Apagar" : "Encender"}
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-700">Control de Zoom</span>
-              <span className="text-sm font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                {zoomLevel.toFixed(1)}x
-              </span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button size="sm" onClick={decreaseZoom} disabled={zoomLevel <= MIN_ZOOM} variant="outline" className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100">
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="flex-1">
-                <input
-                  type="range"
-                  min={MIN_ZOOM}
-                  max={MAX_ZOOM}
-                  step={0.1}
-                  value={zoomLevel}
-                  onChange={handleZoomChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer zoom-slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, #e5e7eb ${((zoomLevel - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
-              </div>
-              <Button size="sm" onClick={increaseZoom} disabled={zoomLevel >= MAX_ZOOM} variant="outline" className="flex-shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex justify-between text-xs text-blue-600">
-              <span>{MIN_ZOOM}x</span>
-              <span className="font-medium">Zoom digital</span>
-              <span>{MAX_ZOOM}x</span>
-            </div>
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <Minus className="w-4 h-4 text-gray-500" />
+            <input
+                type="range"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={0.1}
+                value={isScanning ? zoomLevel : MIN_ZOOM}
+                onChange={handleZoomChange}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer zoom-slider"
+            />
+            <Plus className="w-4 h-4 text-gray-500" />
           </div>
         </Card>
       )}
@@ -460,35 +305,23 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       <div className="space-y-3">
         {!isScanning ? (
           <Button
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-semibold transition-colors duration-200"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg"
             onClick={startScanning}
             disabled={showSuccess || permissionDenied}
           >
-            <CameraIcon className="w-6 h-6 mr-3" />
-            {permissionDenied ? "Permiso denegado" : "Iniciar escaneo con cámara"}
+            <CameraIcon className="w-5 h-5 mr-2" />
+            {permissionDenied ? "Permiso Bloqueado" : "Iniciar escaneo"}
           </Button>
         ) : (
           <Button
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg font-semibold transition-colors duration-200"
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg"
             onClick={stopScanning}
           >
-            <X className="w-6 h-6 mr-3" />
-            Detener escaneo
+            <X className="w-5 h-5 mr-2" />
+            Detener
           </Button>
         )}
       </div>
-
-      <Card className="p-4 bg-emerald-50 border-emerald-200">
-        <div className="space-y-2">
-          <p className="text-emerald-900 font-semibold text-sm">Consejos para mejor escaneo:</p>
-          <ul className="text-emerald-700 text-xs space-y-1 ml-4">
-            <li>• Usa la barra de zoom para acercar o alejar la imagen</li>
-            <li>• Mantén el QR dentro del cuadro verde</li>
-            <li>• Asegúrate de tener buena iluminación</li>
-            <li>• El zoom digital funciona en todos los dispositivos</li>
-          </ul>
-        </div>
-      </Card>
     </div>
   );
 }
