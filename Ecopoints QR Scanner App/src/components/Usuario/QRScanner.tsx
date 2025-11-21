@@ -178,6 +178,12 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       fps: 10,
       qrbox: { width: 250, height: 250 },
       supportedformats: [Html5QrcodeSupportedFormats.QR_CODE],
+      videoConstraints: {
+        advanced: [
+          { focusMode: 'continuous' },
+          { whiteBalanceMode: 'continuous' }
+        ]
+      }
     };
 
     console.log("Iniciando scanner con configuración simple...");
