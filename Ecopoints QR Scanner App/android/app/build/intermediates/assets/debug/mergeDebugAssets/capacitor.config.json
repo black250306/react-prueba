@@ -1,7 +1,7 @@
 {
 	"appId": "com.ecoPoints.App",
 	"appName": "Ecopoints App",
-	"webDir": "dist",
+	"webDir": "build",
 	"bundledWebRuntime": false,
 	"server": {
 		"androidScheme": "https",
