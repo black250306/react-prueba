@@ -13,7 +13,7 @@ const PushNotificationsHandler = () => {
         const registerAndListen = async () => {
 
             if (!Capacitor.isNativePlatform()) {
-                console.log("Push Notifications not available on web.");
+                console.log("Las notificaciones push no están disponibles en la web.");
                 return;
             }
 
@@ -27,35 +27,35 @@ const PushNotificationsHandler = () => {
 
                 if (permStatus.receive !== 'granted') {
 
-                    console.warn('Push notification permission was not granted.');
+                    console.warn('El permiso para notificaciones push no fue concedido.');
                     return;
                 }
 
                 await PushNotifications.register();
 
                 PushNotifications.addListener('registration', (token: Token) => {
-                    console.info('Device registered for notifications. TOKEN:', token.value);
+                    console.info('Dispositivo registrado para notificaciones. TOKEN:', token.value);
     
                 });
 
                 PushNotifications.addListener('registrationError', (err: any) => {
-                    console.error('Error in notification registration:', err);
+                    console.error('Error en el registro de notificaciones:', err);
                 });
 
                 PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-                    console.log('Push notification received in foreground:', notification);
+                    console.log('Notificación push recibida en primer plano:', notification);
 
                 });
 
                 PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
-                    console.log('Notification action performed:', notification);
+                    console.log('Acción de notificación realizada:', notification);
                     const data = notification.notification.data;
                     if (data.detailsId) {
-                        console.log(`Redirecting to details page: ${data.detailsId}`);
+                        console.log(`Redirigiendo a la página de detalles: ${data.detailsId}`);
                     }
                 });
             } catch (error) {
-                console.error("Failed to register for push notifications", error);
+                console.error("Error al registrarse para las notificaciones push", error);
             }
         }
 
