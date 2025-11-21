@@ -94,7 +94,7 @@ export function Configuracion({ theme = 'light', onToggleTheme, onClose }: Confi
             <div>
                 <h2 className="text-gray-900 dark:text-white mb-4">Acerca de</h2>
                 <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">Versión 1.0.0</p>
+                    <p className="text-gray-500 dark:text-gray-400 mb-2">Versión 10.0.0</p>
                     <p className="text-gray-500 dark:text-gray-400">© 2025 EcoPoints</p>
                     <p className="text-gray-500 dark:text-gray-400 mt-4">
                         Una aplicación para incentivar el reciclaje y cuidar nuestro planeta.
