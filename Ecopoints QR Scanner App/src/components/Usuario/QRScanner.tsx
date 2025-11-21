@@ -16,7 +16,10 @@ interface QRScannerProps {
 export function QRScanner({ onScanSuccess }: QRScannerProps) {
   const [isFlashOn, setIsFlashOn] = useState(false);
 
-  const handleDecode = (result: string) => {
+  const handleScan = (detectedCodes: { rawValue: string }[]) => {
+    const result = detectedCodes[0]?.rawValue;
+    if (!result) return;
+
     console.log('QR Decoded:', result);
     try {
       const parsedResult = JSON.parse(result);
@@ -30,17 +33,19 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       }
     } catch (error) {
       console.error("Error parsing QR code:", error);
-      // Aquí podrías mostrar una notificación al usuario de que el QR no es válido
     }
   };
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center bg-black">
       <Scanner
-        onResult={handleDecode}
+        onScan={handleScan}
         onError={(error: any) => console.error(error?.message)}
         scanDelay={300}
-        torch={isFlashOn}
+        constraints={{
+          facingMode: 'environment',
+          torch: isFlashOn,
+        } as any}
         styles={{
           container: {
             width: '100%',
