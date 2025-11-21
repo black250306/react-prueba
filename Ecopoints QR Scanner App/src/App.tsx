@@ -146,7 +146,7 @@ export default function App() {
 
         <div className="max-w-md mx-auto h-full flex flex-col shadow-xl dark:shadow-gray-900 bg-white dark:bg-gray-900 relative">
           
-          <div className="scrollable-container safe-top">
+          <div className="scrollable-container safe-top pb-16">
             {renderView()}
           </div>
 
