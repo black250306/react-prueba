@@ -14,7 +14,7 @@ export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
   ];
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto">
       <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg">
         <div className="grid grid-cols-4 h-16">
           {navItems.map((item) => {

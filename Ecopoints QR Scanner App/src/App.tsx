@@ -143,7 +143,7 @@ export default function App() {
 
       <div className="max-w-md mx-auto h-screen flex flex-col bg-white dark:bg-gray-900 shadow-xl">
         
-        <main className="flex-grow overflow-y-auto safe-top">
+        <main className="flex-grow overflow-y-auto safe-top pb-20">
           {renderView()}
         </main>
 
