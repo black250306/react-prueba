@@ -5,7 +5,6 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { QrCode, X, CheckCircle2, Camera as CameraIcon, Minus, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, CameraResultType, CameraDirection } from '@capacitor/camera';
 import { CameraPreview } from '@capacitor-community/camera-preview';
 import { toast } from 'sonner';
 import { useCameraPermission } from '../../hooks/useCameraPermission'; // Importar el hook
