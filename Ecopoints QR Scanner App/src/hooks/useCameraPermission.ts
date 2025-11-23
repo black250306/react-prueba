@@ -16,7 +16,6 @@ export const useCameraPermission = () => {
     // Función para verificar el permiso actual.
     const checkPermission = useCallback(async () => {
         if (!Capacitor.isNativePlatform()) {
-            // En la web, el navegador gestiona los permisos. Asumimos 'prompt' y dejamos que el navegador actúe.
             setPermissionStatus('prompt');
             return;
         }
@@ -29,13 +28,8 @@ export const useCameraPermission = () => {
             setPermissionStatus('denied');
         }
     }, []);
-
-    // Función para solicitar el permiso.
     const requestPermission = useCallback(async () => {
         if (!Capacitor.isNativePlatform()) {
-            // En web, la solicitud la dispara el intento de usar la cámara.
-            // Retornamos 'granted' asumiendo que el navegador pedirá permiso si es necesario.
-            // El error se capturará en el bloque try/catch de Html5Qrcode.
             return 'granted';
         }
         
