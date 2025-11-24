@@ -37,18 +37,23 @@ module.exports = {
       output: 'static',
     },
     plugins: [
-        'expo-router', 
-        'expo-font', 
-        'expo-secure-store',
-        [
-            "expo-camera",
-            {
-              "cameraPermission": "Necesitamos acceso a la cámara para escanear códigos QR."
-            }
-        ]
+      'expo-router', 
+      'expo-font', 
+      'expo-secure-store',
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Necesitamos acceso a la cámara para escanear códigos QR."
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
     },
+    extra: {
+      eas: {
+        projectId: "908185ee-09c5-4f19-b3ea-944900bdb20d"
+      }
+    }
   },
 };

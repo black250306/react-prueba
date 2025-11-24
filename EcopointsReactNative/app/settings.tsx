@@ -32,7 +32,7 @@ const SettingRow = ({ icon, text, description, control }: { icon: any, text: str
 };
 
 export default function SettingsScreen() {
-  const { theme, toggleThemePreference } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const colorScheme = useColorScheme() ?? 'light';
   const isDarkMode = theme === 'dark';
 
@@ -42,11 +42,13 @@ export default function SettingsScreen() {
         <SettingRow
           icon={isDarkMode ? "moon-o" : "sun-o"}
           text="Modo Oscuro"
-          description={isDarkMode ? "Activado" : "Desactivado"}
+          description={"Ahorra batería y reduce el brillo"}
           control={
             <Switch
               value={isDarkMode}
-              onValueChange={toggleThemePreference}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#767577', true: Colors.light.tint }}
+              thumbColor={isDarkMode ? Colors.dark.tint : '#f4f3f4'}
             />
           }
         />
@@ -54,7 +56,7 @@ export default function SettingsScreen() {
       
       <Section title="Acerca de">
         <View style={styles.aboutContainer}>
-            <Text style={[styles.aboutText, {color: Colors[colorScheme].icon}]}>Versión 1.0.0 (Migrada)</Text>
+            <Text style={[styles.aboutText, {color: Colors[colorScheme].icon}]}>Versión 1.0.0</Text>
             <Text style={[styles.aboutText, {color: Colors[colorScheme].icon}]}>© 2025 EcoPoints</Text>
             <Text style={[styles.aboutText, {color: Colors[colorScheme].icon, marginTop: 16}]}>
                 Una aplicación para incentivar el reciclaje y cuidar nuestro planeta.

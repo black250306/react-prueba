@@ -26,7 +26,47 @@ export default function ProfileScreen() {
   const [totalScans, setTotalScans] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ... (data fetching logic remains the same)
+  const fetchData = useCallback(async () => {
+    if (!userId || !token) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const getAuthHeaders = () => ({
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      });
+
+      // Fetch points
+      const pointsResponse = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${userId}`, {
+        headers: getAuthHeaders()
+      });
+      if (!pointsResponse.ok) throw new Error('Failed to fetch points');
+      const pointsData = await pointsResponse.json();
+      setPoints(Number(pointsData.puntos) || 0);
+
+      // Fetch scan history
+      const historyResponse = await fetch(`${API_BASE}/obtenerHistorial?usuario_id=${userId}`, {
+        headers: getAuthHeaders()
+      });
+      if (!historyResponse.ok) throw new Error('Failed to fetch history');
+      const historyData = await historyResponse.json();
+      if (Array.isArray(historyData)) {
+        setTotalScans(historyData.length);
+      }
+
+    } catch (error: any) {
+      Alert.alert('Error', 'No se pudieron cargar los datos del perfil.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleLogout = () => {
     signOut();
@@ -61,6 +101,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: Colors[colorScheme].background }]}>
+       {isLoading && <ActivityIndicator size="large" color={Colors.light.tint} style={{marginTop: 20}}/>}
       <View style={[styles.header, { backgroundColor: Colors[colorScheme].background }]}>
         <View style={[styles.avatar, {width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2}]}>
           <FontAwesome name="user" size={avatarSize * 0.5} color={Colors.light.tint} />
