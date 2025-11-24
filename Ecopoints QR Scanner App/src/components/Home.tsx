@@ -31,7 +31,10 @@ export function Home({ onNavigateToRewards }: HomeProps) {
   
   const idusuario = localStorage.getItem("usuario_id");
   const token = localStorage.getItem("token");
-  const [botellas, setBotellas] = useState(0);
+  
+  // 1. CAMBIO: Inicializa botellas a null para indicar que aún no se ha cargado.
+  const [botellas, setBotellas] = useState<number | null>(null);
+  
   const [mostrarTodo, setMostrarTodo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
@@ -52,9 +55,10 @@ export function Home({ onNavigateToRewards }: HomeProps) {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const data: PuntosResponse = await response.json();
-      setBotellas(data.puntos || 0);
+      setBotellas(data.puntos || 0); // Establece el valor, incluyendo 0
     } catch (error) {
       console.error("Error al obtener puntos:", error);
+      setBotellas(0); // Opcional: establecer a 0 o algún indicador de error
     }
   };
 
@@ -98,6 +102,7 @@ export function Home({ onNavigateToRewards }: HomeProps) {
       cargarDatos();
     } else {
       setLoading(false);
+      setBotellas(0); // Si no hay usuario/token, los puntos son 0
     }
   }, [idusuario, token]);
 
@@ -135,15 +140,17 @@ export function Home({ onNavigateToRewards }: HomeProps) {
             </div>
             <div className="space-y-1">
               <div className="flex items-baseline gap-1">
-                {botellas
+                {/* 2. CAMBIO: Renderiza basado en 'loading' o si 'botellas' es null */}
+                {loading || botellas === null
                   ? (
+                    <span className="text-sm text-emerald-100 italic">Cargando...</span>
+                  )
+                  : (
                     <>
+                      {/* botellas ahora es definitivamente un número (incluyendo 0) */}
                       <span className="text-4xl font-semibold">{botellas.toLocaleString()}</span>
                       <span className="text-xl text-emerald-100">ecopoints</span>
                     </>
-                  )
-                  : (
-                    <span className="text-sm text-emerald-100 italic">Cargando...</span>
                   )
                 }
               </div>
@@ -232,4 +239,4 @@ export function Home({ onNavigateToRewards }: HomeProps) {
       </div>
     </div>
   );
-} 
+}
