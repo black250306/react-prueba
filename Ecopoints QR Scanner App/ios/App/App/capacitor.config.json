@@ -27,7 +27,11 @@
 				}
 			]
 		},
-		"CameraPreview": {},
+		"CameraPreview": {
+			"parent": "body",
+			"className": "camera-preview",
+			"position": "rear"
+		},
 		"Geolocation": {
 			"permissions": [
 				{
