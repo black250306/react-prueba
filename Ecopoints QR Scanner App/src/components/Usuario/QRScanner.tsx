@@ -145,7 +145,7 @@ export function QRScanner({ onScanSuccess }: QRScannerProps) {
       await scanner.start(
         { facingMode: "environment" },
         {
-          fps: 15,
+          fps: 60,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           videoConstraints: {
