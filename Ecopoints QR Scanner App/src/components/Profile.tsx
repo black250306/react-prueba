@@ -15,7 +15,7 @@ import {
   Leaf,
   TrendingUp,
   QrCode,
-  ArrowLeft
+  Briefcase
 } from 'lucide-react';
 
 import {
@@ -237,7 +237,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
     return (
       <RegistroEmpresa
         onClose={() => setActiveSection(null)}
-        theme='dark'
+      
       />
     );
   }
@@ -340,7 +340,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         />
         <Separator className="my-4" />
          <MenuButton 
-          icon={<HelpCircle className="w-5 h-5" />} 
+          icon={<Briefcase className="w-5 h-5" />} 
           label="Cuenta Empresa" 
           onClick={() => setActiveSection("registro")} 
         />

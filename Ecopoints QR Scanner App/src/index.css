@@ -1160,6 +1160,9 @@
   .border-amber-200 {
     border-color: var(--color-amber-200);
   }
+  .text-amber-200 {
+    color: var(--color-amber-200);
+  }
 
   .border-amber-500 {
     border-color: var(--color-amber-500);
@@ -1251,6 +1254,9 @@
 
   .bg-amber-500 {
     background-color: var(--color-amber-500);
+  }
+   .bg-amber-900 {
+    background-color: var(--color-amber-900);
   }
 
   .bg-background {
@@ -2514,6 +2520,12 @@
   .dark\:bg-blue-950:is(.dark *) {
     background-color: var(--color-blue-950);
   }
+  .dark\:bg-amber-500:is(.dark *) {
+    background-color: var(--color-amber-500);
+  }
+  .dark\:bg-amber-900:is(.dark *) {
+    background-color: var(--color-amber-900);
+  }
 
   .dark\:bg-destructive\/60:is(.dark *) {
     background-color: var(--destructive);
@@ -2657,6 +2669,9 @@
     color: var(--color-purple-400);
   }
 
+  .dark\:text-amber-200:is(.dark *) {
+    color: var(--color-amber-200);
+  }
   .dark\:text-red-400:is(.dark *) {
     color: var(--color-red-400);
   }
