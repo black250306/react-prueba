@@ -31,10 +31,18 @@ import {
     Smartphone,
     FileText,
     ExternalLink,
-    Send
+    Send,
+    // Iconos necesarios para RegistroEmpresa
+    Building, // 'building'
+    CreditCard, // 'id-card' (RUC/ID Fiscal)
+    UserCheck, // 'user-tie' (Representante Legal)
+    MapPin, // 'map-marker-alt' (Dirección Fiscal)
+    Globe, // 'globe' (Web URL)
+    Image as ImageIcon // 'image' (Logo)
 } from "lucide-react";
 import { toast } from "sonner";
 
+// --- Tipos de Props ---
 interface ConfiguracionProps {
     theme?: 'light' | 'dark';
     onToggleTheme?: () => void;
@@ -52,6 +60,201 @@ interface PrivacidadSeguridadProps {
 interface AyudaSoporteProps {
     onClose?: () => void;
 }
+
+interface RegistroEmpresaProps {
+    onClose?: () => void;
+    theme: 'light' | 'dark'; // Aseguramos que el tema se pase para consistencia
+}
+
+// ----------------------------------------------------------------------
+//                        CONFIGURACIÓN DE ESTILOS ADAPTADOS
+// ----------------------------------------------------------------------
+
+// Definición de colores dinámicos (simulando los modos light/dark)
+const introColors = {
+    light: {
+        bg: 'bg-emerald-100', // Fondo verde claro
+        iconText: 'text-emerald-900', // Color oscuro
+        body: 'text-emerald-800', // Color para texto secundario
+        redAlert: 'text-red-600' // Alerta roja
+    },
+    dark: {
+        bg: 'bg-emerald-900', // Fondo verde esmeralda profundo
+        iconText: 'text-white', // Color claro
+        body: 'text-gray-300', // Color para texto secundario
+        redAlert: 'text-red-400' // Alerta roja
+    }
+};
+
+// Color principal (simula Colors.light.tint de React Native)
+const requiredColor = 'text-emerald-600 dark:text-emerald-400';
+const separatorColor = 'dark:bg-gray-700';
+
+// --- Componente de Fila de Información (InfoItem) adaptado a React/Tailwind ---
+interface InfoItemWebProps {
+    Icon: React.ElementType; // Componente de icono de lucide-react
+    title: string;
+    theme: 'light' | 'dark';
+    isLast?: boolean;
+}
+
+const InfoItemWeb = ({ Icon, title, theme, isLast = false }: InfoItemWebProps) => {
+    const currentColor = requiredColor;
+
+    return (
+        <>
+            <div className="flex items-center py-4 px-4">
+                <Icon className={`w-5 h-5 mr-4 ${currentColor}`} />
+                <div className="flex-1">
+                    <p className={`text-sm font-semibold mb-0.5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{title}</p>
+                    <p className={`text-base italic ${currentColor} font-bold`}>Información Requerida</p>
+                </div>
+            </div>
+            {!isLast && <Separator className={`mx-4 ${separatorColor}`} />}
+        </>
+    );
+};
+
+// ----------------------------------------------------------------------
+//                        SECCIÓN: REGISTRO DE EMPRESA
+// ----------------------------------------------------------------------
+
+export function RegistroEmpresa({ onClose, theme }: RegistroEmpresaProps) {
+    const currentIntroColors = theme === 'light' ? introColors.light : introColors.dark;
+
+    const handleEmailPress = () => {
+        const email = 'soporteecopoints@gmail.com';
+        const subject = 'Consulta de Registro de Cuenta Empresa';
+
+        // Cuerpo del mensaje actualizado con todos los requisitos
+        const body = `Estimado equipo de Ecopoints,\n\nEscribo para solicitar ayuda o información adicional sobre el registro de mi cuenta empresa. \n\nMis datos requeridos son:\n
+* Nombre Legal de la Empresa: 
+* RUC/ID Fiscal: 
+* Representante Legal: 
+* Email de Contacto: 
+* Teléfono de Contacto: 
+* Dirección Fiscal Completa: 
+* Web URL de la Empresa: 
+* Logo de la Empresa (PNG/JPG): 
+`;
+
+        const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(body)}`;
+        
+        try {
+            window.open(mailtoLink, '_self');
+            toast.info("Abriendo tu aplicación de correo...");
+        } catch (error) {
+            console.error('Failed to open mail link:', error);
+            toast.error("No se pudo abrir la aplicación de correo. Por favor, envía un email a: soporteecopoints@gmail.com");
+        }
+    };
+
+    return (
+        <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Registro de Empresa</h1>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="dark:text-white dark:hover:bg-gray-800"
+                >
+                    <X className="w-5 h-5" />
+                </Button>
+            </div>
+
+            {/* TARJETA DE INTRODUCCIÓN DINÁMICA */}
+            <Card className={`p-6 rounded-2xl flex flex-col items-center ${currentIntroColors.bg} border-0 shadow-lg`}>
+                <Leaf className={`w-8 h-8 mb-2 ${currentIntroColors.iconText}`} />
+                
+                <h2 className={`text-xl font-bold mt-1 text-center ${currentIntroColors.iconText}`}>
+                    ¡Únete a Ecopoints y Lidera el Cambio!
+                </h2>
+                <p className={`text-base text-center font-semibold mt-1 mb-3 ${currentIntroColors.body}`}>
+                    Asegura el impacto ambiental de tu empresa y apoya la lucha contra la contaminación.
+                </p>
+
+                <p className={`text-sm text-center mt-2 leading-relaxed ${currentIntroColors.body}`}>
+                    Para activar tu perfil como **Empresa Colaboradora**, debes completar la siguiente información.
+                    <span className={`font-bold ${currentIntroColors.redAlert}`}> Todos los campos son obligatorios.</span>
+                </p>
+            </Card>
+
+            {/* SECCIÓN DE INFORMACIÓN LEGAL Y CONTACTO */}
+            <div>
+                <h2 className="text-gray-900 dark:text-white mb-4">Información Legal y Contacto</h2>
+                <Card className="p-0 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+                    <InfoItemWeb 
+                        Icon={Building} 
+                        title="Nombre Legal de la Empresa *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={CreditCard} 
+                        title="RUC/ID Fiscal *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={UserCheck} 
+                        title="Representante Legal *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={Mail} 
+                        title="Email de Contacto *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={Phone} 
+                        title="Teléfono de Contacto *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={MapPin} 
+                        title="Dirección Fiscal Completa *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={Globe} 
+                        title="Web URL de la Empresa *" 
+                        theme={theme}
+                    />
+                    <InfoItemWeb 
+                        Icon={ImageIcon} 
+                        title="Logo de la Empresa (PNG/JPG) *" 
+                        theme={theme}
+                        isLast
+                    />
+                </Card>
+            </div>
+
+            <div className="pt-4">
+                <Button 
+                    className={`w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center rounded-xl`}
+                    onClick={handleEmailPress}
+                >
+                    <Mail className="w-5 h-5 mr-3" />
+                    <span className="text-base font-bold">Enviar Correo a Soporte</span>
+                </Button>
+            </div>
+            
+            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas dark:border-card-notas">
+                <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-card-notas dark:text-card-notas mt-0.5" />
+                    <div>
+                        <p className="text-emerald-700 dark:text-emerald-300 text-sm">
+                            Al enviar el correo, nuestro equipo de soporte validará los datos y te contactará para finalizar la activación de tu cuenta.
+                        </p>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+}
+
+// ----------------------------------------------------------------------
+//                        SECCIÓN: CONFIGURACIÓN
+// ----------------------------------------------------------------------
 
 export function Configuracion({ theme = 'light', onToggleTheme, onClose }: ConfiguracionProps) {
     return (
@@ -104,6 +307,10 @@ export function Configuracion({ theme = 'light', onToggleTheme, onClose }: Confi
         </div>
     );
 }
+
+// ----------------------------------------------------------------------
+//                        SECCIÓN: NOTIFICACIONES
+// ----------------------------------------------------------------------
 
 export function Notificaciones({ onClose }: NotificacionesProps) {
     const [notificationSettings, setNotificationSettings] = useState({
@@ -253,7 +460,7 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
                 </Card>
             </div>
 
-            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
+            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
                 <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-card-notas dark:text-card-notas mt-0.5" />
                     <div>
@@ -266,6 +473,10 @@ export function Notificaciones({ onClose }: NotificacionesProps) {
         </div>
     );
 }
+
+// ----------------------------------------------------------------------
+//                        SECCIÓN: PRIVACIDAD Y SEGURIDAD
+// ----------------------------------------------------------------------
 
 export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
     const [showChangePassword, setShowChangePassword] = useState(false);
@@ -594,7 +805,7 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
                 </Card>
             </div>
 
-            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
+            <Card className="p-4 bg-card-notas border-card-notas dark:bg-card-notas  dark:border-card-notas">
                 <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-card-notas dark:text-card-notas mt-0.5" />
                     <div>
@@ -607,6 +818,10 @@ export function PrivacidadSeguridad({ onClose }: PrivacidadSeguridadProps) {
         </div>
     );
 }
+
+// ----------------------------------------------------------------------
+//                        SECCIÓN: AYUDA Y SOPORTE
+// ----------------------------------------------------------------------
 
 export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
     return (

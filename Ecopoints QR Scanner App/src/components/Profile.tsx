@@ -22,7 +22,8 @@ import {
   Configuracion,
   Notificaciones,
   PrivacidadSeguridad,
-  AyudaSoporte
+  AyudaSoporte,
+  RegistroEmpresa
 } from './ProfileSections';
 
 type Transaction = {
@@ -232,7 +233,14 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       />
     );
   }
-
+ if (activeSection === "registro") {
+    return (
+      <RegistroEmpresa
+        onClose={() => setActiveSection(null)}
+        theme='dark'
+      />
+    );
+  }
   if (activeSection === "ayuda") {
     return (
       <AyudaSoporte
@@ -331,6 +339,11 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
           onClick={() => setActiveSection("privacidad")} 
         />
         <Separator className="my-4" />
+         <MenuButton 
+          icon={<HelpCircle className="w-5 h-5" />} 
+          label="Cuenta Empresa" 
+          onClick={() => setActiveSection("registro")} 
+        />
         <MenuButton 
           icon={<HelpCircle className="w-5 h-5" />} 
           label="Ayuda y soporte" 
