@@ -118,10 +118,8 @@ export function RegistroEmpresa({ onClose }: RegistroEmpresaProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Registro de Empresa</h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Completa tu perfil empresarial
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cuenta Empresa</h1>
+                    
                 </div>
                 <Button
                     variant="ghost"
@@ -818,7 +816,7 @@ export function AyudaSoporte({ onClose }: AyudaSoporteProps) {
                 </Button>
             </div>
 
-            <Card className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-950/50 border-emerald-200 dark:border-emerald-800">
+            <Card className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-center gap-3 mb-3">
                     <HelpCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-gray-900 dark:text-white font-semibold">¿Necesitas ayuda?</h2>

@@ -2675,6 +2675,10 @@
   .dark\:text-red-400:is(.dark *) {
     color: var(--color-red-400);
   }
+  .dark\:text-red-600:is(.dark *) {
+    color: var(--color-red-600);
+  }
+
 
   .dark\:text-white:is(.dark *) {
     color: var(--color-white);

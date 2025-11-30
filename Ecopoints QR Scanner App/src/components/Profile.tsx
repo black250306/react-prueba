@@ -43,10 +43,10 @@ interface ProfileProps {
 }
 
 export function Profile({ onViewStation, onLogout, theme = 'light', onToggleTheme }: ProfileProps) {
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? '/api' 
+  const API_BASE = window.location.hostname === 'localhost'
+    ? '/api'
     : 'https://ecopoints.hvd.lat/api';
-  
+
   const idusuario = localStorage.getItem("usuario_id");
   const token = localStorage.getItem("token");
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -62,19 +62,19 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
   const obtenerPuntos = async () => {
     if (!idusuario || !token) return;
-    
+
     try {
       const response = await fetch(`${API_BASE}/obtenerPuntos?usuario_id=${idusuario}`, {
         headers: getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setBotellas(Number(data.puntos) || 0);
     } catch (error) {
@@ -84,22 +84,22 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
   const obtenerHistorial = async () => {
     if (!idusuario || !token) return;
-    
+
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE}/obtenerHistorial?usuario_id=${idusuario}`, {
         headers: getAuthHeaders()
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       const transaccionesAdaptadas: Transaction[] = data.map((item: any) => ({
         id: item.id?.toString() || Math.random().toString(),
         type: item.tipo === "canje" ? "redeem" : "scan",
@@ -108,7 +108,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
         points: item.puntos || 0,
         date: item.fecha || new Date().toISOString()
       }));
-      
+
       setTransactions(transaccionesAdaptadas);
     } catch (error) {
       setTransactions([]);
@@ -119,15 +119,15 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
   const obtenerHistorialCanjes = async () => {
     if (!idusuario || !token) return;
-    
+
     try {
       const response = await fetch(`${API_BASE}/obtenerHistorialCanjes?usuario_id=${idusuario}`, {
         headers: getAuthHeaders()
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        
+
         if (Array.isArray(data) && data.length > 0) {
           const canjesAdaptados: Transaction[] = data.map((canje: any) => ({
             id: `canje-${canje.id}`,
@@ -137,7 +137,7 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
             points: canje.puntos_utilizados || 0,
             date: canje.fecha_canje || new Date().toISOString()
           }));
-          
+
           setTransactions(prev => [...prev, ...canjesAdaptados]);
         }
       }
@@ -233,11 +233,11 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       />
     );
   }
- if (activeSection === "registro") {
+  if (activeSection === "registro") {
     return (
       <RegistroEmpresa
         onClose={() => setActiveSection(null)}
-      
+
       />
     );
   }
@@ -269,23 +269,23 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 
       <Card className="p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="grid grid-cols-3 gap-4 text-center dark:bg-gray-800">
-          <Stat 
-            icon={<Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />} 
-            label="Puntos" 
-            value={botellas !== null ? botellas.toLocaleString() : '...'} 
-            type="puntos" 
+          <Stat
+            icon={<Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />}
+            label="Puntos"
+            value={botellas !== null ? botellas.toLocaleString() : '...'}
+            type="puntos"
           />
-          <Stat 
-            icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />} 
-            label="Escaneos" 
-            value={isLoading ? '...' : totalScans.toLocaleString()} 
-            type="escaneos"  
+          <Stat
+            icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
+            label="Escaneos"
+            value={isLoading ? '...' : totalScans.toLocaleString()}
+            type="escaneos"
           />
-          <Stat 
-            icon={<Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />} 
-            label="Nivel" 
-            value={level} 
-            type="nivel"  
+          <Stat
+            icon={<Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
+            label="Nivel"
+            value={level}
+            type="nivel"
           />
         </div>
       </Card>
@@ -318,42 +318,42 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
       <div className="space-y-2">
         <Separator className="my-2" />
 
-        <MenuButton 
-          icon={<QrCode className="w-5 h-5" />} 
-          label="Puntos de recolección" 
-          onClick={() => setActiveSection("")} 
+        <MenuButton
+          icon={<QrCode className="w-5 h-5" />}
+          label="Puntos de recolección"
+          onClick={() => setActiveSection("")}
         />
-        <MenuButton 
-          icon={<Settings className="w-5 h-5" />} 
-          label="Configuración" 
-          onClick={() => setActiveSection("configuracion")} 
+        <MenuButton
+          icon={<Settings className="w-5 h-5" />}
+          label="Configuración"
+          onClick={() => setActiveSection("configuracion")}
         />
-        <MenuButton 
-          icon={<Bell className="w-5 h-5" />} 
-          label="Notificaciones" 
-          onClick={() => setActiveSection("notificaciones")} 
+        <MenuButton
+          icon={<Bell className="w-5 h-5" />}
+          label="Notificaciones"
+          onClick={() => setActiveSection("notificaciones")}
         />
-        <MenuButton 
-          icon={<Shield className="w-5 h-5" />} 
-          label="Privacidad y seguridad" 
-          onClick={() => setActiveSection("privacidad")} 
+        <MenuButton
+          icon={<Shield className="w-5 h-5" />}
+          label="Privacidad y seguridad"
+          onClick={() => setActiveSection("privacidad")}
         />
         <Separator className="my-4" />
-         <MenuButton 
-          icon={<Briefcase className="w-5 h-5" />} 
-          label="Cuenta Empresa" 
-          onClick={() => setActiveSection("registro")} 
+        <MenuButton
+          icon={<Briefcase className="w-5 h-5" />}
+          label="Cuenta Empresa"
+          onClick={() => setActiveSection("registro")}
         />
-        <MenuButton 
-          icon={<HelpCircle className="w-5 h-5" />} 
-          label="Ayuda y soporte" 
-          onClick={() => setActiveSection("ayuda")} 
+        <MenuButton
+          icon={<HelpCircle className="w-5 h-5" />}
+          label="Ayuda y soporte"
+          onClick={() => setActiveSection("ayuda")}
         />
-        <MenuButton 
-          icon={<LogOut className="w-5 h-5" />} 
-          label="Cerrar sesión" 
-          className="text-red-600" 
-          onClick={onLogout} 
+        <MenuButton
+          icon={<LogOut className="w-5 h-5" />}
+          label="Cerrar sesión"
+          className="text-red-600 dark:text-red-600"
+          onClick={onLogout}
         />
       </div>
 
@@ -366,21 +366,21 @@ export function Profile({ onViewStation, onLogout, theme = 'light', onToggleThem
 }
 
 function Stat({ icon, label, value, type }: { icon: React.ReactNode; label: string; value: any; type: string }) {
-  
+
   const typeColorMap: { [key: string]: string } = {
     'puntos': 'bg-emerald-100 dark:bg-emerald-900',
     'escaneos': 'bg-blue-100 dark:bg-blue-900',
     'nivel': 'bg-purple-100 dark:bg-purple-900',
-    'info': 'bg-blue-100 dark:bg-blue-900', 
+    'info': 'bg-blue-100 dark:bg-blue-900',
   };
 
   const colorClasses = typeColorMap[type] || typeColorMap['info'];
-  
+
   const iconClasses = `w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${colorClasses}`;
 
   return (
     <div>
-      <div className={iconClasses}> 
+      <div className={iconClasses}>
         {icon}
       </div>
       <p className="text-gray-900 dark:text-white font-semibold">{value}</p>
